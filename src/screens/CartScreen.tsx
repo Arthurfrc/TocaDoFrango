@@ -1,7 +1,7 @@
 // src/screens/CartScreen.tsx
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform, Linking } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
 import { COLORS } from '@/constants/colors';
@@ -92,6 +92,9 @@ export default function CartScreen({ route, navigation }: any) {
                     text: 'Enviar',
                     onPress: () => {
                         // Aqui você abriria o WhatsApp
+                        Linking.openURL(whatsappUrl).catch(() => {
+                            Alert.alert('❌ Erro', 'Não foi possível abrir o WhatsApp. Verifique se o app está instalado.');
+                        })
                         // Para teste, vamos mostrar a mensagem
                         Alert.alert('📋 Mensagem Gerada:', message);
                     }
@@ -274,7 +277,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     totalSection: {
-        backgroundColor: COLORS.textSecondary,
+        backgroundColor: COLORS.text,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
