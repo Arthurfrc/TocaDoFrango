@@ -10,34 +10,63 @@ interface MenuContextType {
   updateProduct: (productId: string, product: Product) => void;
   deleteProduct: (productId: string) => void;
   toggleProductAvailability: (productId: string) => void;
+
+  hasUnsavedChanges: boolean;
+  publishChanges: () => Promise<void>;
+  discardChanges: () => void;
+  isPublishing: boolean;
 }
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined);
 
 export function MenuProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(MENU_DATA);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const addProduct = (product: Product) => {
     setProducts(prev => [...prev, product]);
+    setHasUnsavedChanges(true);
   };
 
   const updateProduct = (productId: string, updatedProduct: Product) => {
-    setProducts(prev => 
+    setProducts(prev =>
       prev.map(p => p.id === productId ? updatedProduct : p)
     );
+    setHasUnsavedChanges(true);
   };
 
   const deleteProduct = (productId: string) => {
     setProducts(prev => prev.filter(p => p.id !== productId));
+    setHasUnsavedChanges(true);
   };
 
   const toggleProductAvailability = (productId: string) => {
-    setProducts(prev => 
-      prev.map(p => 
+    setProducts(prev =>
+      prev.map(p =>
         p.id === productId ? { ...p, available: !p.available } : p
       )
     );
+    setHasUnsavedChanges(true);
   };
+
+  const publishChanges = async () => {
+    setIsPublishing(true);
+    try {
+      // Aqui vai a lógica do Firebase depois
+      console.log('Publicando alterações...');
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error('Erro ao publicar alterações:', error);
+    } finally {
+      setIsPublishing(false);
+    }
+  }
+
+  const discardChanges = () => {
+    setProducts(MENU_DATA);
+    setHasUnsavedChanges(false);
+  }
 
   return (
     <MenuContext.Provider value={{
@@ -45,7 +74,11 @@ export function MenuProvider({ children }: { children: ReactNode }) {
       addProduct,
       updateProduct,
       deleteProduct,
-      toggleProductAvailability
+      toggleProductAvailability,
+      hasUnsavedChanges,
+      publishChanges,
+      discardChanges,
+      isPublishing
     }}>
       {children}
     </MenuContext.Provider>
