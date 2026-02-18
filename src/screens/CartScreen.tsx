@@ -1,25 +1,28 @@
 // src/screens/CartScreen.tsx
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
 import { COLORS } from '@/constants/colors';
-import { getProductById } from '@/data/menu';
+import { useMenu } from '@/context/MenuContext';
+import { useCart } from '@/context/CartContext';
 
 export default function CartScreen({ route, navigation }: any) {
-    const { cart } = route.params || {};
+    const { cart, removeFromCart, updateQuantity } = useCart();
     const [customerInfo, setCustomerInfo] = useState({
         name: '',
         phone: '',
         address: ''
     });
 
+    const { products } = useMenu();
+
     const getCartItems = () => {
         const items = [];
         for (const [productId, quantity] of Object.entries(cart || {})) {
-            const product = getProductById(productId);
-            if (product) {
+            const product = products.find(p => p.id === productId);
+            if (product && product.available) { // ← SÓ SE DISPONÍVEL
                 items.push({
                     ...product,
                     quantity: quantity as number
@@ -114,64 +117,95 @@ export default function CartScreen({ route, navigation }: any) {
     }
 
     return (
-        <ScrollView style={styles.container}>
-            <Text style={styles.title}>🛒 Meu Pedido</Text>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.container}
+        >
+            <ScrollView style={styles.scrollView}>
+                <Text style={styles.title}>🛒 Meu Pedido</Text>
 
-            {/* Itens do Carrinho */}
-            <View style={styles.itemsSection}>
-                {cartItems.map((item, index) => (
-                    <View key={index} style={styles.itemCard}>
-                        <View style={styles.itemInfo}>
-                            <Text style={styles.itemName}>{item.name}</Text>
-                            <Text style={styles.itemDetails}>
-                                {item.quantity}x R$ {item.price.toFixed(2)} = R$ {(item.price * item.quantity).toFixed(2)}
-                            </Text>
+                {/* Itens do Carrinho */}
+                <View style={styles.itemsSection}>
+                    {cartItems.map((item, index) => (
+                        <View key={index} style={styles.itemCard}>
+                            <View style={styles.itemInfo}>
+                                <Text style={styles.itemName}>{item.name}</Text>
+                                <Text style={styles.itemDetails}>
+                                    {item.quantity}x R$ {item.price.toFixed(2)} = R$ {(item.price * item.quantity).toFixed(2)}
+                                </Text>
+                            </View>
+
+                            {/* CONTROLES DE QUANTIDADE */}
+                            <View style={styles.quantityControls}>
+                                <TouchableOpacity
+                                    style={styles.quantityButton}
+                                    onPress={() => updateQuantity(item.id, item.quantity - 1)}
+                                >
+                                    <Text style={styles.quantityButtonText}>-</Text>
+                                </TouchableOpacity>
+
+                                <Text style={styles.quantityText}>{item.quantity}</Text>
+
+                                <TouchableOpacity
+                                    style={styles.quantityButton}
+                                    onPress={() => updateQuantity(item.id, item.quantity + 1)}
+                                >
+                                    <Text style={styles.quantityButtonText}>+</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={styles.removeButton}
+                                    onPress={() => removeFromCart(item.id)}
+                                >
+                                    <FontAwesome5 name="trash" size={16} color="#FF0000" />
+                                </TouchableOpacity>
+                            </View>
                         </View>
-                    </View>
-                ))}
-            </View>
+                    ))}
+                </View>
 
-            {/* Total */}
-            <View style={styles.totalSection}>
-                <FontAwesome5 name="money-bill-wave" size={24} color="white" />
-                <Text style={styles.totalText}>Total: R$ {getTotal().toFixed(2)}</Text>
-            </View>
+                {/* Total */}
+                <View style={styles.totalSection}>
+                    <FontAwesome5 name="money-bill-wave" size={24} color="white" />
+                    <Text style={styles.totalText}>Total: R$ {getTotal().toFixed(2)}</Text>
+                </View>
 
-            {/* Formulário Cliente */}
-            <View style={styles.formSection}>
-                <Text style={styles.sectionTitle}>👤 Seus Dados</Text>
+                {/* Formulário Cliente */}
+                <View style={styles.formSection}>
+                    <Text style={styles.sectionTitle}>👤 Seus Dados</Text>
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Seu nome completo"
-                    value={customerInfo.name}
-                    onChangeText={(text) => setCustomerInfo({ ...customerInfo, name: text })}
-                />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Seu nome completo"
+                        value={customerInfo.name}
+                        onChangeText={(text) => setCustomerInfo({ ...customerInfo, name: text })}
+                    />
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Seu telefone com DDD"
-                    value={customerInfo.phone}
-                    onChangeText={(text) => setCustomerInfo({ ...customerInfo, phone: text })}
-                    keyboardType="phone-pad"
-                />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Seu telefone com DDD"
+                        value={customerInfo.phone}
+                        onChangeText={(text) => setCustomerInfo({ ...customerInfo, phone: text })}
+                        keyboardType="phone-pad"
+                    />
 
-                <TextInput
-                    style={[styles.input, styles.textArea]}
-                    placeholder="Endereço de entrega"
-                    value={customerInfo.address}
-                    onChangeText={(text) => setCustomerInfo({ ...customerInfo, address: text })}
-                    multiline
-                    numberOfLines={3}
-                />
-            </View>
+                    <TextInput
+                        style={[styles.input, styles.textArea]}
+                        placeholder="Endereço de entrega"
+                        value={customerInfo.address}
+                        onChangeText={(text) => setCustomerInfo({ ...customerInfo, address: text })}
+                        multiline
+                        numberOfLines={3}
+                    />
+                </View>
 
-            {/* Botão Enviar */}
-            <TouchableOpacity style={styles.sendButton} onPress={sendToWhatsApp}>
-                <FontAwesome5 name="whatsapp" size={24} color="white" />
-                <Text style={styles.sendButtonText}>Enviar para WhatsApp</Text>
-            </TouchableOpacity>
-        </ScrollView>
+                {/* Botão Enviar */}
+                <TouchableOpacity style={styles.sendButton} onPress={sendToWhatsApp}>
+                    <FontAwesome5 name="whatsapp" size={24} color="white" />
+                    <Text style={styles.sendButtonText}>Enviar para WhatsApp</Text>
+                </TouchableOpacity>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -179,6 +213,10 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
+        // padding: 20,
+    },
+    scrollView: {
+        flex: 1,
         padding: 20,
     },
     title: {
@@ -286,5 +324,34 @@ const styles = StyleSheet.create({
         color: COLORS.background,
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    quantityControls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    quantityButton: {
+        backgroundColor: COLORS.primary,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    quantityButtonText: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    quantityText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: COLORS.text,
+        minWidth: 30,
+        textAlign: 'center',
+    },
+    removeButton: {
+        padding: 8,
+        borderRadius: 5,
     },
 });

@@ -1,27 +1,41 @@
 // src/screens/MenuScreen.tsx
 
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 
 import { COLORS } from "@/constants/colors";
-import { getMenuByCategory, MENU_DATA } from "@/data/menu";
+import { useMenu } from "@/context/MenuContext";
+import { useCart } from "@/context/CartContext";
 import { MaterialIcons } from "@expo/vector-icons";
+import CustomAlert from "@/components/CustomAlert";
 
 export default function MenuScreen({ navigation }: any) {
-    const [cart, setCart] = useState<{ [key: string]: number }>({});
-    const menuByCategory = getMenuByCategory();
-
-    const addToCart = (productId: string) => {
-        setCart(prev => ({
-            ...prev,
-            [productId]: (prev[productId] || 0) + 1
-        }));
-        Alert.alert('✅ Adicionado!', 'Produto adicionado ao carrinho');
-    };
+    const { cart, addToCart } = useCart();
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({ title: '', message: '' });
+    const { products } = useMenu();
+    const menuByCategory = products
+        .filter(product => product.available)
+        .reduce((acc, product) => {
+            if (!acc[product.category]) {
+                acc[product.category] = [];
+            }
+            acc[product.category].push(product);
+            return acc;
+        }, {} as { [key: string]: typeof products });
 
     const getTotalItems = () => {
         return Object.values(cart).reduce((sum, qty) => sum + qty, 0);
     }
+
+    const handleAddToCart = (productId: string) => {
+        addToCart(productId);
+        setAlertConfig({
+            title: '✅ Adicionado!',
+            message: 'Produto adicionado ao carrinho'
+        });
+        setAlertVisible(true);
+    };
 
     return (
         <ScrollView style={styles.container}>
@@ -41,7 +55,7 @@ export default function MenuScreen({ navigation }: any) {
 
                             <TouchableOpacity
                                 style={styles.addButton}
-                                onPress={() => addToCart(product.id)}
+                                onPress={() => handleAddToCart(product.id)}
                             >
                                 <Text style={styles.addButtonText}>+</Text>
                             </TouchableOpacity>
@@ -61,6 +75,15 @@ export default function MenuScreen({ navigation }: any) {
                     </Text>
                 </TouchableOpacity>
             )}
+            <CustomAlert
+                visible={alertVisible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onConfirm={() => setAlertVisible(false)}
+                onCancel={() => setAlertVisible(false)}
+                confirmText="OK"
+                cancelText=""
+            />
         </ScrollView>
     );
 }

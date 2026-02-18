@@ -57,7 +57,9 @@ export default function AppNavigator() {
                 <Stack.Screen
                     name="Admin"
                     component={AdminScreen}
-                    options={{ title: 'Painel Admin' }}
+                    options={{
+                        headerShown: false,
+                    }}
                 />
                 {/* <Stack.Screen
                     name="Orders"

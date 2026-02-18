@@ -33,9 +33,10 @@ export default function CustomAlert({
                     <Text style={styles.message}>{message}</Text>
 
                     <View style={styles.buttonContainer}>
-                        <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-                            <Text style={styles.cancelButtonText}>{cancelText}</Text>
-                        </TouchableOpacity>
+                        {cancelText &&
+                            <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
+                                <Text style={styles.cancelButtonText}>{cancelText}</Text>
+                            </TouchableOpacity>}
 
                         <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>
                             <Text style={styles.confirmButtonText}>{confirmText}</Text>

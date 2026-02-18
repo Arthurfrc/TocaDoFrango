@@ -5,13 +5,16 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import AppNavigator from '@/navigation/AppNavigator';
 import { MenuProvider } from '@/context/MenuContext';
+import { CartProvider } from '@/context/CartContext';
 
 export default function App() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <MenuProvider>
-          <AppNavigator />
+          <CartProvider>
+            <AppNavigator />
+          </CartProvider>
         </MenuProvider>
       </SafeAreaView>
     </SafeAreaProvider>

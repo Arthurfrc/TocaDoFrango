@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 import { COLORS } from '@/constants/colors';
 import { Product } from '@/types';
@@ -122,12 +123,21 @@ export default function AdminScreen({ navigation }: any) {
 	return (
 		<View style={styles.container}>
 			<View style={styles.header}>
-				<Text style={styles.title}>🔧 Painel Admin</Text>
+				<View style={styles.headerLeft}>
+					<TouchableOpacity
+						style={styles.backButton}
+						onPress={() => navigation.goBack()}
+					>
+						<FontAwesome5 name="arrow-left" size={18} color={COLORS.background} />
+					</TouchableOpacity>
+					<Text style={styles.title}>Painel Admin</Text>
+				</View>
+
 				<TouchableOpacity
 					style={styles.addButton}
 					onPress={() => openEditModal()}
 				>
-					<Text style={styles.addButtonText}>+ Novo Produto</Text>
+					<Text style={styles.addButtonText}>+ Produto</Text>
 				</TouchableOpacity>
 			</View>
 
@@ -151,23 +161,25 @@ export default function AdminScreen({ navigation }: any) {
 								style={[styles.actionButton, styles.editButton]}
 								onPress={() => openEditModal(product)}
 							>
-								<Text style={styles.actionButtonText}>✏️</Text>
+								<FontAwesome5 name="edit" size={16} color="white" />
 							</TouchableOpacity>
 
 							<TouchableOpacity
 								style={[styles.actionButton, styles.toggleButton]}
 								onPress={() => toggleProductAvailability(product.id)}
 							>
-								<Text style={styles.actionButtonText}>
-									{product.available ? '🔴' : '🟢'}
-								</Text>
+								<FontAwesome5
+									name={product.available ? "eye-slash" : "eye"}
+									size={16}
+									color="white"
+								/>
 							</TouchableOpacity>
 
 							<TouchableOpacity
 								style={[styles.actionButton, styles.deleteButton]}
 								onPress={() => handleDeleteProduct(product.id)}
 							>
-								<Text style={styles.actionButtonText}>🗑️</Text>
+								<FontAwesome5 name="trash" size={16} color="white" />
 							</TouchableOpacity>
 						</View>
 					</View>
@@ -336,13 +348,13 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 	},
 	editButton: {
-		backgroundColor: '#2196F3',
+		backgroundColor: '#4CAF50',
 	},
 	toggleButton: {
-		backgroundColor: '#FF9800',
+		backgroundColor: '#2196f3',
 	},
 	deleteButton: {
-		backgroundColor: '#F44336',
+		backgroundColor: '#FF5252',
 	},
 	actionButtonText: {
 		fontSize: 16,
@@ -399,5 +411,18 @@ const styles = StyleSheet.create({
 	modalButtonText: {
 		fontWeight: 'bold',
 		color: COLORS.background,
+	},
+	headerLeft: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 15,
+	},
+	backButton: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		backgroundColor: 'rgba(255,255,255,0.2)',
+		justifyContent: 'center',
+		alignItems: 'center',
 	},
 });
