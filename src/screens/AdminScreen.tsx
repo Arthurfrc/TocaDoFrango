@@ -10,7 +10,17 @@ import { useMenu } from '@/context/MenuContext';
 import CustomAlert from '@/components/CustomAlert';
 
 export default function AdminScreen({ navigation }: any) {
-	const { products, addProduct, updateProduct, deleteProduct, toggleProductAvailability } = useMenu();
+	const { products,
+		addProduct,
+		updateProduct,
+		deleteProduct,
+		toggleProductAvailability,
+		hasUnsavedChanges,
+		publishChanges,
+		discardChanges,
+		isPublishing,
+		isLoading,
+	} = useMenu();
 	const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 	const [modalVisible, setModalVisible] = useState(false);
 	const [alertVisible, setAlertVisible] = useState(false);
@@ -120,6 +130,14 @@ export default function AdminScreen({ navigation }: any) {
 		);
 	};
 
+	if (isLoading) {
+		return (
+			<View style={styles.loading}>
+				<Text>Carregando menu...</Text>
+			</View>
+		);
+	}
+
 	return (
 		<View style={styles.container}>
 			<View style={styles.header}>
@@ -130,16 +148,43 @@ export default function AdminScreen({ navigation }: any) {
 					>
 						<FontAwesome5 name="arrow-left" size={18} color={COLORS.background} />
 					</TouchableOpacity>
-					<Text style={styles.title}>Painel Admin</Text>
+					<View style={styles.headerTitle}>
+						<Text style={styles.title}>Painel Admin</Text>
+					</View>
 				</View>
-
-				<TouchableOpacity
-					style={styles.addButton}
-					onPress={() => openEditModal()}
-				>
-					<Text style={styles.addButtonText}>+ Produto</Text>
-				</TouchableOpacity>
+				<View style={styles.headerRight}>
+					<TouchableOpacity
+						style={styles.addButton}
+						onPress={() => openEditModal()}
+					>
+						<Text style={styles.addButtonText}>+ Produto</Text>
+					</TouchableOpacity>
+				</View>
 			</View>
+
+			{hasUnsavedChanges && (
+				<View style={styles.actionBar}>
+					<TouchableOpacity
+						style={[styles.actionBarButton, styles.discardButton]}
+						onPress={discardChanges}
+						disabled={isPublishing}
+					>
+						<FontAwesome5 name="undo" size={16} color={COLORS.background} />
+						<Text style={styles.actionBarText}>Descartar</Text>
+					</TouchableOpacity>
+
+					<TouchableOpacity
+						style={[styles.actionBarButton, styles.publishButton, isPublishing && styles.publishButtonDisabled]}
+						onPress={publishChanges}
+						disabled={isPublishing}
+					>
+						<FontAwesome5 name="cloud-upload-alt" size={16} color={COLORS.background} />
+						<Text style={styles.actionBarText}>
+							{isPublishing ? 'Publicando...' : 'Publicar'}
+						</Text>
+					</TouchableOpacity>
+				</View>
+			)}
 
 			<ScrollView style={styles.content}>
 				{products.map(product => (
@@ -238,14 +283,14 @@ export default function AdminScreen({ navigation }: any) {
 									style={[styles.modalButton, styles.cancelButton]}
 									onPress={() => setModalVisible(false)}
 								>
-									<Text style={styles.modalButtonText}>Cancelar</Text>
+									<Text style={styles.modalButtonTextCancel}>Cancelar</Text>
 								</TouchableOpacity>
 
 								<TouchableOpacity
 									style={[styles.modalButton, styles.saveButton]}
 									onPress={saveProduct}
 								>
-									<Text style={styles.modalButtonText}>Salvar</Text>
+									<Text style={styles.modalButtonTextConfirm}>Salvar</Text>
 								</TouchableOpacity>
 							</View>
 						</ScrollView>
@@ -293,11 +338,12 @@ const styles = StyleSheet.create({
 	content: {
 		flex: 1,
 		padding: 20,
+		marginBottom: 40
 	},
 	productCard: {
 		backgroundColor: '#FFF',
 		padding: 15,
-		marginBottom: 15,
+		marginBottom: 25,
 		borderRadius: 10,
 		elevation: 2,
 		flexDirection: 'row',
@@ -408,9 +454,41 @@ const styles = StyleSheet.create({
 	saveButton: {
 		backgroundColor: COLORS.primary,
 	},
-	modalButtonText: {
+	modalButtonTextConfirm: {
 		fontWeight: 'bold',
 		color: COLORS.background,
+	},
+	modalButtonTextCancel: {
+		fontWeight: 'bold',
+		color: COLORS.text,
+	},
+	actionBar: {
+		backgroundColor: 'rgba(0,0,0,0.05)',
+		padding: 15,
+		marginHorizontal: 20,
+		marginVertical: 10,
+		borderRadius: 10,
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+	},
+	actionBarButton: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
+		paddingHorizontal: 16,
+		paddingVertical: 12,
+		borderRadius: 8,
+		flex: 1,
+	},
+	actionBarText: {
+		color: COLORS.background,
+		fontSize: 14,
+		fontWeight: 'bold',
+	},
+	addButtonContainer: {
+		paddingHorizontal: 20,
+		paddingBottom: 10,
 	},
 	headerLeft: {
 		flexDirection: 'row',
@@ -424,5 +502,60 @@ const styles = StyleSheet.create({
 		backgroundColor: 'rgba(255,255,255,0.2)',
 		justifyContent: 'center',
 		alignItems: 'center',
+	},
+	headerTitle: {
+		gap: 2,
+	},
+	unsavedIndicator: {
+		fontSize: 12,
+		color: 'rgba(255,255,255,0.8)',
+		fontStyle: 'italic',
+	},
+	headerRight: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 10,
+	},
+	headerButton: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 5,
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		borderRadius: 20,
+		backgroundColor: 'rgba(255,255,255,0.2)',
+	},
+	headerButtonText: {
+		color: COLORS.background,
+		fontSize: 12,
+		fontWeight: 'bold',
+	},
+	publishButton: {
+		backgroundColor: '#4CAF50',
+	},
+	publishButtonDisabled: {
+		backgroundColor: 'rgba(255,255,255,0.1)',
+	},
+	discardButton: {
+		backgroundColor: '#FF9800',
+	},
+	uidButton: {
+		backgroundColor: '#FF6B6B',
+		padding: 15,
+		borderRadius: 8,
+		alignItems: 'center',
+		margin: 20,
+		marginBottom: 30,
+	},
+	uidButtonText: {
+		color: '#FFF',
+		fontSize: 16,
+		fontWeight: 'bold',
+	},
+	loading: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: COLORS.background,
 	},
 });
