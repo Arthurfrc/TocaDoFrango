@@ -1,9 +1,9 @@
 // src/context/MenuContext.tsx
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Alert } from 'react-native';
 import { Product } from '@/types';
-import { MENU_DATA } from '@/data/menu';
+import { menuService } from '@/services/menuService';
 
 interface MenuContextType {
     products: Product[];
@@ -16,14 +16,16 @@ interface MenuContextType {
     publishChanges: () => Promise<void>;
     discardChanges: () => void;
     isPublishing: boolean;
+    isLoading: boolean;
 }
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined);
 
 export function MenuProvider({ children }: { children: ReactNode }) {
-    const [products, setProducts] = useState<Product[]>(MENU_DATA);
+    const [products, setProducts] = useState<Product[]>();
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     const addProduct = (product: Product) => {
         setProducts(prev => [...prev, product]);
@@ -56,9 +58,9 @@ export function MenuProvider({ children }: { children: ReactNode }) {
         try {
             // Aqui vai a lógica do Firebase depois
             console.log('Publicando alterações...');
+            await menuService.saveMenu(products);
             setHasUnsavedChanges(false);
             Alert.alert('✅ Sucesso!', 'Alterações publicadas com sucesso!');
-
         } catch (error) {
             console.error('Erro ao publicar alterações:', error);
             Alert.alert('❌ Erro!', 'Erro ao publicar alterações!');
@@ -68,9 +70,28 @@ export function MenuProvider({ children }: { children: ReactNode }) {
     }
 
     const discardChanges = () => {
-        setProducts(MENU_DATA);
         setHasUnsavedChanges(false);
     }
+
+    useEffect(() => {
+        const loadMenu = async () => {
+            try {
+                const menuData = await menuService.getMenu();
+                setProducts(menuData);
+            } catch (error) {
+                console.error('Erro ao carregar menu:', error);
+                setProducts([]);
+                Alert.alert(
+                    'Modo Offline',
+                    'Conecte-se à internet para atualizar o cardápio.'
+                );
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        loadMenu();
+    }, []);
 
     return (
         <MenuContext.Provider value={{
@@ -82,7 +103,8 @@ export function MenuProvider({ children }: { children: ReactNode }) {
             hasUnsavedChanges,
             publishChanges,
             discardChanges,
-            isPublishing
+            isPublishing,
+            isLoading
         }}>
             {children}
         </MenuContext.Provider>

@@ -18,7 +18,9 @@ export default function AdminScreen({ navigation }: any) {
 		hasUnsavedChanges,
 		publishChanges,
 		discardChanges,
-		isPublishing } = useMenu();
+		isPublishing,
+		isLoading,
+	} = useMenu();
 	const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 	const [modalVisible, setModalVisible] = useState(false);
 	const [alertVisible, setAlertVisible] = useState(false);
@@ -128,6 +130,14 @@ export default function AdminScreen({ navigation }: any) {
 		);
 	};
 
+	if (isLoading) {
+		return (
+			<View style={styles.loading}>
+				<Text>Carregando menu...</Text>
+			</View>
+		);
+	}
+
 	return (
 		<View style={styles.container}>
 			<View style={styles.header}>
@@ -162,7 +172,7 @@ export default function AdminScreen({ navigation }: any) {
 						<FontAwesome5 name="undo" size={16} color={COLORS.background} />
 						<Text style={styles.actionBarText}>Descartar</Text>
 					</TouchableOpacity>
-				
+
 					<TouchableOpacity
 						style={[styles.actionBarButton, styles.publishButton, isPublishing && styles.publishButtonDisabled]}
 						onPress={publishChanges}
@@ -273,14 +283,14 @@ export default function AdminScreen({ navigation }: any) {
 									style={[styles.modalButton, styles.cancelButton]}
 									onPress={() => setModalVisible(false)}
 								>
-									<Text style={styles.modalButtonText}>Cancelar</Text>
+									<Text style={styles.modalButtonTextCancel}>Cancelar</Text>
 								</TouchableOpacity>
 
 								<TouchableOpacity
 									style={[styles.modalButton, styles.saveButton]}
 									onPress={saveProduct}
 								>
-									<Text style={styles.modalButtonText}>Salvar</Text>
+									<Text style={styles.modalButtonTextConfirm}>Salvar</Text>
 								</TouchableOpacity>
 							</View>
 						</ScrollView>
@@ -328,11 +338,12 @@ const styles = StyleSheet.create({
 	content: {
 		flex: 1,
 		padding: 20,
+		marginBottom: 40
 	},
 	productCard: {
 		backgroundColor: '#FFF',
 		padding: 15,
-		marginBottom: 15,
+		marginBottom: 25,
 		borderRadius: 10,
 		elevation: 2,
 		flexDirection: 'row',
@@ -443,9 +454,13 @@ const styles = StyleSheet.create({
 	saveButton: {
 		backgroundColor: COLORS.primary,
 	},
-	modalButtonText: {
+	modalButtonTextConfirm: {
 		fontWeight: 'bold',
 		color: COLORS.background,
+	},
+	modalButtonTextCancel: {
+		fontWeight: 'bold',
+		color: COLORS.text,
 	},
 	actionBar: {
 		backgroundColor: 'rgba(0,0,0,0.05)',
@@ -523,5 +538,24 @@ const styles = StyleSheet.create({
 	},
 	discardButton: {
 		backgroundColor: '#FF9800',
+	},
+	uidButton: {
+		backgroundColor: '#FF6B6B',
+		padding: 15,
+		borderRadius: 8,
+		alignItems: 'center',
+		margin: 20,
+		marginBottom: 30,
+	},
+	uidButtonText: {
+		color: '#FFF',
+		fontSize: 16,
+		fontWeight: 'bold',
+	},
+	loading: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: COLORS.background,
 	},
 });
