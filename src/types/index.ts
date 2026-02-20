@@ -20,7 +20,7 @@ export interface Order {
     total: number;
     customerName: string;
     customerPhone: string;
-    customerAddress: string;
+    customerPaymentMethod: string;
     status: 'pending' | 'preparing' | 'ready' | 'completed';
     createdAt: Date;
 }

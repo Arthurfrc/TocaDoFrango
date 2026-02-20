@@ -57,7 +57,7 @@ export default function CartScreen({ route, navigation }: any) {
         message += `${'─'.repeat(35)}\n`;
         message += `👤 *Nome:* ${customerInfo.name}\n`;
         message += `📞 *Telefone:* ${customerInfo.phone}\n`;
-        message += `📍 *Forma de Pagamento:* ${customerInfo.paymentMethod}\n\n`;
+        message += `💳 *Forma de Pagamento:* ${customerInfo.paymentMethod}\n\n`;
 
         message += `🛒 *PEDIDO*\n`;
         message += `${'─'.repeat(35)}\n`;
