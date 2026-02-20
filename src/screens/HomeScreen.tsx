@@ -149,15 +149,14 @@ export default function HomeScreen({ navigation }: any) {
             {/* Informações */}
             <View style={styles.infoSection}>
                 <Text style={styles.sectionTitle}>⏰ Horário de Funcionamento</Text>
-                <Text style={styles.infoText}>Segunda a Sábado: 18h às 23h</Text>
-                <Text style={styles.infoText}>Domingo: 18h às 22h</Text>
+                <Text style={styles.infoText}>Sábado e Domingo: 10h às 15h</Text>
 
                 <Text style={styles.sectionTitle}>📍 Localização</Text>
-                <Text style={styles.infoText}>Rua das Galinhas, 123</Text>
-                <Text style={styles.infoText}>Centro - Cidade/UF</Text>
+                <Text style={styles.infoText}>Rua da Consolação, 900</Text>
+                <Text style={styles.infoText}>Emaús - Parnamirim/RN</Text>
 
                 <Text style={styles.sectionTitle}>📞 Contato</Text>
-                <Text style={styles.infoText}>(11) 99999-9999</Text>
+                <Text style={styles.infoText}>(84) 98822-2025</Text>
             </View>
         </ScrollView>
     );
