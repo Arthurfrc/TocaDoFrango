@@ -1,7 +1,19 @@
 // src/screens/CartScreen.tsx
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform, Linking } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    ScrollView,
+    TouchableOpacity,
+    TextInput,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    Linking,
+    Modal
+} from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
 import { COLORS } from '@/constants/colors';
@@ -9,6 +21,7 @@ import { useMenu } from '@/context/MenuContext';
 import { useCart } from '@/context/CartContext';
 
 export default function CartScreen({ route, navigation }: any) {
+    const [showPaymentOptions, setShowPaymentOptions] = useState(false);
     const { cart, removeFromCart, updateQuantity } = useCart();
     const [customerInfo, setCustomerInfo] = useState({
         name: '',
@@ -177,30 +190,72 @@ export default function CartScreen({ route, navigation }: any) {
                 <View style={styles.formSection}>
                     <Text style={styles.sectionTitle}>👤 Seus Dados</Text>
 
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Seu nome completo"
-                        value={customerInfo.name}
-                        onChangeText={(text) => setCustomerInfo({ ...customerInfo, name: text })}
-                    />
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Nome completo:</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={customerInfo.name}
+                            onChangeText={(text) => setCustomerInfo({ ...customerInfo, name: text })}
+                        />
+                    </View>
 
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Seu telefone com DDD"
-                        value={customerInfo.phone}
-                        onChangeText={(text) => setCustomerInfo({ ...customerInfo, phone: text })}
-                        keyboardType="phone-pad"
-                    />
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Telefone com DDD:</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={customerInfo.phone}
+                            onChangeText={(text) => setCustomerInfo({ ...customerInfo, phone: text })}
+                            keyboardType="phone-pad"
+                        />
+                    </View>
 
-                    <TextInput
-                        style={[styles.input, styles.textArea]}
-                        placeholder="Endereço de entrega"
-                        value={customerInfo.address}
-                        onChangeText={(text) => setCustomerInfo({ ...customerInfo, address: text })}
-                        multiline
-                        numberOfLines={3}
-                    />
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Forma de pagamento:</Text>
+                        <TouchableOpacity
+                            style={styles.paymentSelector}
+                            onPress={() => setShowPaymentOptions(true)}
+                        >
+                            <Text style={styles.paymentText}>
+                                {customerInfo.address || 'Selecione a forma de pagamento'}
+                            </Text>
+                            <FontAwesome5 name="chevron-down" size={16} color={COLORS.text} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
+
+                {/* Modal de seleção de pagamento */}
+                <Modal
+                    visible={showPaymentOptions}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={() => setShowPaymentOptions(false)}
+                >
+                    <View style={styles.paymentModalOverlay}>
+                        <View style={styles.paymentModalContent}>
+                            <Text style={styles.paymentModalTitle}>Forma de Pagamento</Text>
+
+                            {['Dinheiro', 'PIX', 'Cartão crédito/débito'].map((option) => (
+                                <TouchableOpacity
+                                    key={option}
+                                    style={styles.paymentOption}
+                                    onPress={() => {
+                                        setCustomerInfo({ ...customerInfo, address: option });
+                                        setShowPaymentOptions(false);
+                                    }}
+                                >
+                                    <Text style={styles.paymentOptionText}>{option}</Text>
+                                </TouchableOpacity>
+                            ))}
+
+                            <TouchableOpacity
+                                style={styles.paymentCancel}
+                                onPress={() => setShowPaymentOptions(false)}
+                            >
+                                <Text style={styles.paymentCancelText}>Cancelar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
 
                 {/* Botão Enviar */}
                 <TouchableOpacity style={styles.sendButton} onPress={sendToWhatsApp}>
@@ -356,5 +411,68 @@ const styles = StyleSheet.create({
     removeButton: {
         padding: 8,
         borderRadius: 5,
+    },
+    inputGroup: {
+        marginBottom: 0,
+    },
+    inputLabel: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: COLORS.text,
+        marginBottom: 8,
+    },
+    paymentSelector: {
+        backgroundColor: '#FFF',
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: 10,
+        padding: 15,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    paymentText: {
+        fontSize: 16,
+        color: COLORS.text,
+    },
+    paymentModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    paymentModalContent: {
+        backgroundColor: '#FFF',
+        borderRadius: 15,
+        padding: 20,
+        width: '80%',
+        maxHeight: '50%',
+    },
+    paymentModalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    paymentOption: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    paymentOptionText: {
+        fontSize: 16,
+        color: COLORS.text,
+        textAlign: 'center',
+    },
+    paymentCancel: {
+        padding: 15,
+        marginTop: 10,
+    },
+    paymentCancelText: {
+        fontSize: 16,
+        color: COLORS.primary,
+        textAlign: 'center',
+        fontWeight: 'bold',
     },
 });
