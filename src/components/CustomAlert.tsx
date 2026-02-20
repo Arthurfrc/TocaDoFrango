@@ -17,9 +17,13 @@ interface CustomAlertProps {
 
 export default function CustomAlert({
     visible, title, message, onConfirm, onCancel,
-    confirmText = 'Confirmar',
-    cancelText = 'Cancelar'
+    confirmText,
+    cancelText
 }: CustomAlertProps) {
+
+    const finalConfirmText = confirmText || 'Confirmar';
+    const finalCancelText = cancelText || 'Cancelar';
+
     return (
         <Modal
             transparent={true}
@@ -33,13 +37,13 @@ export default function CustomAlert({
                     <Text style={styles.message}>{message}</Text>
 
                     <View style={styles.buttonContainer}>
-                        {cancelText &&
+                        {cancelText && cancelText.trim() !== '' &&
                             <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-                                <Text style={styles.cancelButtonText}>{cancelText}</Text>
+                                <Text style={styles.cancelButtonText}>{finalCancelText}</Text>
                             </TouchableOpacity>}
 
                         <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>
-                            <Text style={styles.confirmButtonText}>{confirmText}</Text>
+                            <Text style={styles.confirmButtonText}>{finalConfirmText}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

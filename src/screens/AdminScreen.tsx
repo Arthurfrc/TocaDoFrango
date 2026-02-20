@@ -1,7 +1,17 @@
 // src/screens/AdminScreen.tsx
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+	View,
+	Text,
+	StyleSheet,
+	ScrollView,
+	TouchableOpacity,
+	TextInput,
+	Modal,
+	KeyboardAvoidingView,
+	Platform
+} from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
 import { COLORS } from '@/constants/colors';
@@ -29,6 +39,8 @@ export default function AdminScreen({ navigation }: any) {
 		message: '',
 		onConfirm: () => { },
 		onCancel: () => { },
+		confirmText: 'Confirmar',
+		cancelText: undefined as string | undefined,
 	});
 
 	const [formData, setFormData] = useState({
@@ -44,7 +56,7 @@ export default function AdminScreen({ navigation }: any) {
 			setFormData({
 				name: product.name,
 				description: product.description,
-				price: product.price.toString(),
+				price: Math.round(product.price * 100).toString(),
 				category: product.category,
 			});
 		} else {
@@ -60,7 +72,14 @@ export default function AdminScreen({ navigation }: any) {
 	};
 
 	// Função helper
-	const showAlert = (title: string, message: string, onConfirm: () => void, onCancel: () => void) => {
+	const showAlert = (
+		title: string,
+		message: string,
+		onConfirm: () => void,
+		onCancel: () => void,
+		confirmText: string,
+		cancelText?: string,
+	) => {
 		setAlertConfig({
 			title,
 			message,
@@ -71,51 +90,65 @@ export default function AdminScreen({ navigation }: any) {
 			onCancel: () => {
 				onCancel();
 				setAlertVisible(false);
-			}
+			},
+			confirmText,
+			cancelText,
 		});
 		setAlertVisible(true);
 	};
 
+	const displayPrice = (value: string): string => {
+		if (!value) return '';
+		return formatPrice(value);
+	};
+
+	// Atualizar a função saveProduct para tratar o novo formato
 	const saveProduct = () => {
 		if (!formData.name || !formData.price || !formData.category) {
 			showAlert(
 				'⚠️ Campos Obrigatórios',
 				'Preencha nome, preço e categoria!',
-				() => { }, // Só fecha
-				() => { }  // Só fecha
-			); return;
+				() => { },
+				() => { },
+				'Confirmar',
+				''
+			);
+			return;
 		}
+
+		// Converte o preço formatado para número
+		const priceValue = parseInt(formData.price) / 100;
 
 		const productData: Product = {
 			id: editingProduct?.id || Date.now().toString(),
 			name: formData.name,
 			description: formData.description,
-			price: parseFloat(formData.price.replace(',', '.')),
+			price: priceValue,
 			category: formData.category,
 			available: true,
 		};
 
 		if (editingProduct) {
-			// Editar produto existente
 			updateProduct(editingProduct.id, productData);
 			showAlert(
 				'✅ Sucesso',
 				'Produto atualizado!',
-				() => { }, // Só fecha
-				() => { }  // Só fecha
+				() => setModalVisible(false),
+				() => { },
+				'Confirmar',
+				''
 			);
 		} else {
-			// Adicionar novo produto
 			addProduct(productData);
 			showAlert(
 				'✅ Sucesso',
 				'Produto adicionado!',
-				() => { }, // Só fecha
-				() => { }  // Só fecha
+				() => setModalVisible(false),
+				() => { },
+				'Confirmar',
+				''
 			);
 		}
-
-		setModalVisible(false);
 	};
 
 	const handleDeleteProduct = (productId: string) => {
@@ -126,8 +159,45 @@ export default function AdminScreen({ navigation }: any) {
 				deleteProduct(productId);
 				// Não precisa de alert aqui, a ação já foi executada
 			},
-			() => { } // Só fecha
+			() => { }, // Só fecha
+			'Confirmar',
+			'Cancelar'
 		);
+	};
+
+	// Função para formatar o preço estilo MercadoLivre
+	const formatPrice = (value: string): string => {
+		if (!value) return '';
+
+		// Remove tudo que não é número
+		const numbers = value.replace(/\D/g, '');
+
+		if (numbers.length === 0) return '';
+
+		// Conte o valor como centavos diretos (estilo MercadoLivre)
+		// Se digitar "3500" -> R$ 35,00
+		// Se digitar "35" -> R$ 0,35
+		const cents = parseInt(numbers);
+
+		// Formata como moeda brasileira
+		return (cents / 100).toFixed(2).replace('.', ',');
+	};
+
+	// Função para handle da mudança do preço
+	const handlePriceChange = (text: string) => {
+		// Remove formatação anterior (vírgula e ponto)
+		const numbers = text.replace(/\D/g, '');
+
+		if (numbers.length === 0) {
+			setFormData({ ...formData, price: '' });
+			return;
+		}
+
+		// Limita a 9 dígitos (99999.99)
+		if (numbers.length > 9) return;
+
+		// Armazena os números puros para conversão correta
+		setFormData({ ...formData, price: numbers });
 	};
 
 	if (isLoading) {
@@ -248,35 +318,71 @@ export default function AdminScreen({ navigation }: any) {
 								{editingProduct ? '✏️ Editar Produto' : '➕ Novo Produto'}
 							</Text>
 
-							<TextInput
-								style={styles.input}
-								placeholder="Nome do produto"
-								value={formData.name}
-								onChangeText={(text) => setFormData({ ...formData, name: text })}
-							/>
+							{/* Campo Nome */}
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>
+									<FontAwesome5 name="tag" size={14} color={COLORS.primary} /> Nome do Produto
+								</Text>
+								<TextInput
+									style={styles.input}
+									placeholder="Digite o nome do produto"
+									value={formData.name}
+									onChangeText={(text) => setFormData({ ...formData, name: text })}
+								/>
+							</View>
 
-							<TextInput
-								style={[styles.input, styles.textArea]}
-								placeholder="Descrição"
-								value={formData.description}
-								onChangeText={(text) => setFormData({ ...formData, description: text })}
-								multiline
-							/>
+							{/* Campo Descrição */}
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>
+									<FontAwesome5 name="align-left" size={14} color={COLORS.primary} /> Descrição
+								</Text>
+								<TextInput
+									style={[styles.input, styles.textArea]}
+									placeholder="Descreva seu produto..."
+									value={formData.description}
+									onChangeText={(text) => setFormData({ ...formData, description: text })}
+									multiline
+								/>
+							</View>
 
-							<TextInput
-								style={styles.input}
-								placeholder="Preço (ex: 35.50 ou 35,50)"
-								value={formData.price}
-								onChangeText={(text) => setFormData({ ...formData, price: text })}
-								keyboardType="decimal-pad"
-							/>
+							{/* Campo Preço - Estilo OLX */}
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>
+									<FontAwesome5 name="money-bill-wave" size={14} color={COLORS.primary} /> Preço
+								</Text>
+								<View style={styles.priceContainer}>
+									<Text style={styles.pricePrefix}>R$</Text>
+									<TextInput
+										style={[
+											styles.priceInput,
+											displayPrice(formData.price) === '0,00' && { color: '#CCCCCC' }
+										]}
+										placeholder="0,00"
+										placeholderTextColor="#CCCCCC"
+										value={displayPrice(formData.price)}
+										onChangeText={handlePriceChange}
+										keyboardType="numeric"
+										maxLength={12}
+										selection={{
+											start: displayPrice(formData.price).length,
+											end: displayPrice(formData.price).length,
+										}}
+									/>
+								</View>
+							</View>
 
-							<TextInput
-								style={styles.input}
-								placeholder="Categoria"
-								value={formData.category}
-								onChangeText={(text) => setFormData({ ...formData, category: text })}
-							/>
+							{/* Campo Categoria */}
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>
+									<FontAwesome5 name="folder" size={14} color={COLORS.primary} /> Categoria
+								</Text>
+								<TextInput
+									style={styles.input}
+									placeholder="Ex: Lanches, Bebidas, Sobremesas"
+									value={formData.category}
+									onChangeText={(text) => setFormData({ ...formData, category: text })}
+								/>
+							</View>
 
 							<View style={styles.modalActions}>
 								<TouchableOpacity
@@ -303,6 +409,8 @@ export default function AdminScreen({ navigation }: any) {
 				message={alertConfig.message}
 				onConfirm={alertConfig.onConfirm}
 				onCancel={alertConfig.onCancel}
+				confirmText={alertConfig.confirmText}
+				cancelText={alertConfig.cancelText}
 			/>
 		</View>
 	);
@@ -413,7 +521,8 @@ const styles = StyleSheet.create({
 	},
 	modalContent: {
 		backgroundColor: COLORS.background,
-		padding: 30,
+		paddingHorizontal: 30,
+		paddingVertical: 20,
 		borderRadius: 20,
 		width: '90%',
 		maxHeight: '80%',
@@ -476,7 +585,8 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 8,
-		paddingHorizontal: 16,
+		marginHorizontal: 10,
+		paddingHorizontal: 18,
 		paddingVertical: 12,
 		borderRadius: 8,
 		flex: 1,
@@ -557,5 +667,38 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		backgroundColor: COLORS.background,
+	},
+	// Adicionar ao StyleSheet existente
+	inputGroup: {
+		marginBottom: 0,
+	},
+	inputLabel: {
+		fontSize: 14,
+		fontWeight: 'bold',
+		color: COLORS.text,
+		marginBottom: 8,
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
+	},
+	priceContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		// borderWidth: 1,
+		// borderColor: COLORS.border,
+		// borderRadius: 10,
+		backgroundColor: COLORS.background,
+	},
+	pricePrefix: {
+		fontSize: 32,
+		fontWeight: 'bold',
+		color: COLORS.primary,
+		marginRight: 8
+	},
+	priceInput: {
+		flex: 1,
+		fontSize: 42,
+		fontWeight: 'bold',
+		color: COLORS.text,
 	},
 });
