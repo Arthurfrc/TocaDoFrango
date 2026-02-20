@@ -26,7 +26,7 @@ export default function CartScreen({ route, navigation }: any) {
     const [customerInfo, setCustomerInfo] = useState({
         name: '',
         phone: '',
-        address: ''
+        paymentMethod: ''
     });
 
     const { products } = useMenu();
@@ -57,7 +57,7 @@ export default function CartScreen({ route, navigation }: any) {
         message += `${'─'.repeat(35)}\n`;
         message += `👤 *Nome:* ${customerInfo.name}\n`;
         message += `📞 *Telefone:* ${customerInfo.phone}\n`;
-        message += `📍 *Endereço:* ${customerInfo.address}\n\n`;
+        message += `📍 *Forma de Pagamento:* ${customerInfo.paymentMethod}\n\n`;
 
         message += `🛒 *PEDIDO*\n`;
         message += `${'─'.repeat(35)}\n`;
@@ -87,7 +87,7 @@ export default function CartScreen({ route, navigation }: any) {
     };
 
     const sendToWhatsApp = () => {
-        if (!customerInfo.name || !customerInfo.phone || !customerInfo.address) {
+        if (!customerInfo.name || !customerInfo.phone || !customerInfo.paymentMethod) {
             Alert.alert('⚠️ Campos Obrigatórios', 'Por favor, preencha todos os seus dados!');
             return;
         }
@@ -216,7 +216,7 @@ export default function CartScreen({ route, navigation }: any) {
                             onPress={() => setShowPaymentOptions(true)}
                         >
                             <Text style={styles.paymentText}>
-                                {customerInfo.address || 'Selecione a forma de pagamento'}
+                                {customerInfo.paymentMethod || 'Selecione a forma de pagamento'}
                             </Text>
                             <FontAwesome5 name="chevron-down" size={16} color={COLORS.text} />
                         </TouchableOpacity>
@@ -239,7 +239,7 @@ export default function CartScreen({ route, navigation }: any) {
                                     key={option}
                                     style={styles.paymentOption}
                                     onPress={() => {
-                                        setCustomerInfo({ ...customerInfo, address: option });
+                                        setCustomerInfo({ ...customerInfo, paymentMethod: option });
                                         setShowPaymentOptions(false);
                                     }}
                                 >
