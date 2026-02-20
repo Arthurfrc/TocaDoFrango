@@ -93,7 +93,7 @@ export default function CartScreen({ route, navigation }: any) {
         }
 
         const message = formatWhatsAppMessage();
-        const phoneNumber = '5584999397770'; // SEU NÚMERO DE WHATSAPP AQUI
+        const phoneNumber = '5584999397770'; // SEU NÚMERO DE WHATSAPP AQUI - MUDAR DEPOIS O NÚMERO PARA O TOCA DO FRANGO
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
         Alert.alert(
