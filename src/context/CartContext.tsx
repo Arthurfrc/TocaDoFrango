@@ -8,18 +8,31 @@ interface CartContextType {
     removeFromCart: (productId: string) => void;
     updateQuantity: (productId: string, quantity: number) => void;
     clearCart: () => void;
+    deliveryType: 'entrega' | 'retirada';
+    setDeliveryType: (type: 'entrega' | 'retirada') => void;
+    getDeliveryFee: () => number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
     const [cart, setCart] = useState<{ [key: string]: number }>({});
+    const [deliveryType, setDeliveryType] = useState<'entrega' | 'retirada'>('retirada');
 
     const addToCart = (productId: string) => {
         setCart(prev => ({
             ...prev,
             [productId]: (prev[productId] || 0) + 1
         }));
+    };
+
+    const getDeliveryFee = () => {
+        return deliveryType === 'entrega' ? 3 : 0;
+    };
+
+    const getTotalWithDelivery = () => {
+        // TODO: Calculate total with delivery fee
+        return 0;
     };
 
     const removeFromCart = (productId: string) => {
@@ -51,7 +64,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
             addToCart,
             removeFromCart,
             updateQuantity,
-            clearCart
+            clearCart,
+            deliveryType,
+            setDeliveryType,
+            getDeliveryFee
         }}>
             {children}
         </CartContext.Provider>
