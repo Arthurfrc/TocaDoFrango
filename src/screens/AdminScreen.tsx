@@ -315,7 +315,7 @@ export default function AdminScreen({ navigation }: any) {
 					<View style={styles.modalContent}>
 						<ScrollView showsVerticalScrollIndicator={false}>
 							<Text style={styles.modalTitle}>
-								{editingProduct ? '✏️ Editar Produto' : '➕ Novo Produto'}
+								{editingProduct ? 'Editar Produto' : 'Novo Produto'}
 							</Text>
 
 							{/* Campo Nome */}
@@ -378,7 +378,7 @@ export default function AdminScreen({ navigation }: any) {
 								</Text>
 								<TextInput
 									style={styles.input}
-									placeholder="Ex: Lanches, Bebidas, Sobremesas"
+									placeholder="Ex: Lanches, Bebidas"
 									value={formData.category}
 									onChangeText={(text) => setFormData({ ...formData, category: text })}
 								/>
