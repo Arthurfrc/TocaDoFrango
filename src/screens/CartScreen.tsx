@@ -22,7 +22,15 @@ import { useCart } from '@/context/CartContext';
 
 export default function CartScreen({ route, navigation }: any) {
     const [showPaymentOptions, setShowPaymentOptions] = useState(false);
-    const { cart, removeFromCart, updateQuantity } = useCart();
+    const [showDeliveryOptions, setShowDeliveryOptions] = useState(false);
+
+    const { cart,
+        removeFromCart,
+        updateQuantity,
+        deliveryType,
+        setDeliveryType,
+        getDeliveryFee
+    } = useCart();
     const [customerInfo, setCustomerInfo] = useState({
         name: '',
         phone: '',
@@ -46,42 +54,35 @@ export default function CartScreen({ route, navigation }: any) {
     };
 
     const getTotal = () => {
-        return getCartItems().reduce((total, item) => total + (item.price * item.quantity), 0);
+        const itemsTotal = getCartItems().reduce((total, item) => total + (item.price * item.quantity), 0);
+        return itemsTotal + getDeliveryFee();
     };
 
     const formatWhatsAppMessage = () => {
         const items = getCartItems();
-        let message = `🐔 *TOCA DO FRANGO - NOTA FISCAL* 🐔\n\n`;
 
-        message += `📋 *DADOS DO CLIENTE*\n`;
-        message += `${'─'.repeat(35)}\n`;
-        message += `👤 *Nome:* ${customerInfo.name}\n`;
-        message += `📞 *Telefone:* ${customerInfo.phone}\n`;
-        message += `💳 *Forma de Pagamento:* ${customerInfo.paymentMethod}\n\n`;
+        let message = `🐔 *TOCA DO FRANGO - PEDIDO CONFIRMADO* 🐔\n\n`;
 
-        message += `🛒 *PEDIDO*\n`;
-        message += `${'─'.repeat(35)}\n`;
+        message += `👤 *Cliente:* ${customerInfo.name}\n`;
+        message += `📞 *Tel:* ${customerInfo.phone}\n`;
+        message += `🚚 *Entrega:* ${deliveryType === 'retirada' ? 'Retirada no local' : 'Delivery (+R$3,00)'}\n`;
+        message += `💳 *Pagamento:* ${customerInfo.paymentMethod}\n\n`;
+
+        message += `📋 *PEDIDO*\n`;
+        message += `${'─'.repeat(30)}\n`;
 
         items.forEach((item, index) => {
-            message += `${index + 1}. *${item.name}*\n`;
-            message += `   Qtde: ${item.quantity}x\n`;
-            message += `   Unit.: R$ ${item.price.toFixed(2)}\n`;
-            message += `   Subtotal: R$ ${(item.price * item.quantity).toFixed(2)}\n`;
-            message += `\n`;
+            message += `${index + 1}. ${item.name} - ${item.quantity}x = R$ ${(item.price * item.quantity).toFixed(2)}\n`;
         });
 
-        message += `${'═'.repeat(35)}\n`;
-        message += `💰 *TOTAL DO PEDIDO: R$ ${getTotal().toFixed(2)}*\n\n`;
+        if (getDeliveryFee() > 0) {
+            message += `\n🚚 *Taxa de entrega:* R$ ${getDeliveryFee().toFixed(2)}\n`;
+        }
 
-        message += `📅 *DATA/HORA:* ${new Date().toLocaleString('pt-BR')}*\n\n`;
-
-        message += `🔔 *OBSERVAÇÕES*\n`;
-        message += `- Pedido confirmado via app\n`;
-        message += `- Prazo estimado: 40-60 min\n`;
-        message += `- Formas de pagamento: dinheiro/pix\n\n`;
-
-        message += `📱 *ENVIADO AUTOMATICAMENTE PELO APP*\n`;
-        message += `${'═'.repeat(35)}`;
+        message += `\n${'═'.repeat(30)}\n`;
+        message += `💰 *TOTAL: R$ ${getTotal().toFixed(2)}*\n`;
+        message += `⏱️ *Prazo:* 40-60 min\n`;
+        message += `📱 *Enviado pelo App*\n`;
 
         return message;
     };
@@ -221,6 +222,18 @@ export default function CartScreen({ route, navigation }: any) {
                             <FontAwesome5 name="chevron-down" size={16} color={COLORS.text} />
                         </TouchableOpacity>
                     </View>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Tipo de entrega:</Text>
+                        <TouchableOpacity
+                            style={styles.deliverySelector}
+                            onPress={() => setShowDeliveryOptions(true)}
+                        >
+                            <Text style={styles.deliveryText}>
+                                {deliveryType === 'retirada' ? '🏃 Retirada no local' : '🚚 Delivery (+R$3,00)'}
+                            </Text>
+                            <FontAwesome5 name="chevron-down" size={16} color={COLORS.text} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Modal de seleção de pagamento */}
@@ -250,6 +263,47 @@ export default function CartScreen({ route, navigation }: any) {
                             <TouchableOpacity
                                 style={styles.paymentCancel}
                                 onPress={() => setShowPaymentOptions(false)}
+                            >
+                                <Text style={styles.paymentCancelText}>Cancelar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+
+                {/* Modal de seleção de entrega */}
+                <Modal
+                    visible={showDeliveryOptions}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={() => setShowDeliveryOptions(false)}
+                >
+                    <View style={styles.paymentModalOverlay}>
+                        <View style={styles.paymentModalContent}>
+                            <Text style={styles.paymentModalTitle}>Tipo de Entrega</Text>
+
+                            <TouchableOpacity
+                                style={styles.paymentOption}
+                                onPress={() => {
+                                    setDeliveryType('retirada');
+                                    setShowDeliveryOptions(false);
+                                }}
+                            >
+                                <Text style={styles.paymentOptionText}>🏃 Retirada no local (Grátis)</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.paymentOption}
+                                onPress={() => {
+                                    setDeliveryType('entrega');
+                                    setShowDeliveryOptions(false);
+                                }}
+                            >
+                                <Text style={styles.paymentOptionText}>🚚 Delivery (+R$3,00)</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.paymentCancel}
+                                onPress={() => setShowDeliveryOptions(false)}
                             >
                                 <Text style={styles.paymentCancelText}>Cancelar</Text>
                             </TouchableOpacity>
@@ -474,5 +528,19 @@ const styles = StyleSheet.create({
         color: COLORS.primary,
         textAlign: 'center',
         fontWeight: 'bold',
+    },
+    deliverySelector: {
+        backgroundColor: '#FFF',
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: 10,
+        padding: 15,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    deliveryText: {
+        fontSize: 16,
+        color: COLORS.text,
     },
 });

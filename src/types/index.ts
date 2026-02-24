@@ -21,6 +21,6 @@ export interface Order {
     customerName: string;
     customerPhone: string;
     customerPaymentMethod: string;
-    status: 'pending' | 'preparing' | 'ready' | 'completed';
+    status: 'pendente' | 'preparando' | 'pronto' | 'entregue';
     createdAt: Date;
 }

@@ -28,25 +28,26 @@ export function MenuProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     const addProduct = (product: Product) => {
-        setProducts(prev => [...prev, product]);
+        setProducts(prev => [...(prev || []), product].sort((a, b) => a.name.localeCompare(b.name)));
         setHasUnsavedChanges(true);
     };
 
     const updateProduct = (productId: string, updatedProduct: Product) => {
         setProducts(prev =>
-            prev.map(p => p.id === productId ? updatedProduct : p)
+            (prev || []).map(p => p.id === productId ? updatedProduct : p)
+                .sort((a, b) => a.name.localeCompare(b.name))
         );
         setHasUnsavedChanges(true);
     };
 
     const deleteProduct = (productId: string) => {
-        setProducts(prev => prev.filter(p => p.id !== productId));
+        setProducts(prev => (prev || []).filter(p => p.id !== productId));
         setHasUnsavedChanges(true);
     };
 
     const toggleProductAvailability = (productId: string) => {
         setProducts(prev =>
-            prev.map(p =>
+            (prev || []).map(p =>
                 p.id === productId ? { ...p, available: !p.available } : p
             )
         );
@@ -58,7 +59,7 @@ export function MenuProvider({ children }: { children: ReactNode }) {
         try {
             // Aqui vai a lógica do Firebase depois
             console.log('Publicando alterações...');
-            await menuService.saveMenu(products);
+            await menuService.saveMenu(products || []);
             setHasUnsavedChanges(false);
             Alert.alert('✅ Sucesso!', 'Alterações publicadas com sucesso!');
         } catch (error) {
@@ -77,25 +78,22 @@ export function MenuProvider({ children }: { children: ReactNode }) {
         const loadMenu = async () => {
             try {
                 const menuData = await menuService.getMenu();
-                setProducts(menuData);
+                setProducts(menuData.sort((a, b) => a.name.localeCompare(b.name)));
             } catch (error) {
                 console.error('Erro ao carregar menu:', error);
                 setProducts([]);
-                Alert.alert(
-                    'Modo Offline',
-                    'Conecte-se à internet para atualizar o cardápio.'
-                );
+                Alert.alert('Modo Offline', 'Conecte-se à internet para atualizar o cardápio.');
             } finally {
                 setIsLoading(false);
             }
-        }
+        };
 
         loadMenu();
     }, []);
 
     return (
         <MenuContext.Provider value={{
-            products,
+            products: products || [],
             addProduct,
             updateProduct,
             deleteProduct,
