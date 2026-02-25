@@ -1,0 +1,4 @@
+export const APP_CONFIG = {
+    WHATSAPP_PHONE: process.env.EXPO_PUBLIC_WHATSAPP_PHONE || '5584999397770',
+    DELIVERY_FEE: 3.00,
+}
