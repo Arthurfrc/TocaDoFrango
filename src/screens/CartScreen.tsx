@@ -45,7 +45,8 @@ export default function CartScreen({ route, navigation }:
         deliveryType,
         setDeliveryType,
         getDeliveryFee,
-        clearCart
+        clearCart,
+        decreaseStock
     } = useCart();
     const [customerInfo, setCustomerInfo] = useState({
         name: '',
@@ -95,7 +96,7 @@ export default function CartScreen({ route, navigation }:
         message += `💳 *Pagamento:* ${customerInfo.paymentMethod}\n\n`;
 
         message += `📋 *PEDIDO*\n`;
-        message += `${'─'.repeat(30)}\n`;
+        message += `${'─'.repeat(20)}\n`;
 
         items.forEach((item, index) => {
             message += `${index + 1}. ${item.name} - ${item.quantity}x = R$ ${(item.price * item.quantity).toFixed(2)}\n`;
@@ -105,7 +106,7 @@ export default function CartScreen({ route, navigation }:
             message += `\n🏍️ *Taxa de entrega:* R$ ${getDeliveryFee().toFixed(2)}\n`;
         }
 
-        message += `\n${'═'.repeat(30)}\n`;
+        message += `\n${'═'.repeat(20)}\n`;
         message += `💰 *TOTAL: R$ ${getTotal.toFixed(2)}*\n`;
         message += `⏱️ *Prazo:* 40-60 min\n`;
         message += `📱 *Enviado pelo App*\n`;
@@ -146,6 +147,12 @@ export default function CartScreen({ route, navigation }:
                     onPress: async () => {
                         try {
                             await Linking.openURL(whatsappUrl);
+
+                            for (const item of cartItems) {
+                                if (item.hasStockControl) {
+                                    await decreaseStock(item.id, products);
+                                }
+                            }
                             clearCart();
                             setCustomerInfo({
                                 name: '',

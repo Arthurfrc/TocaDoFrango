@@ -1,6 +1,6 @@
 // src/services/menuService.ts
 
-import { collection, doc, setDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import { Product } from '@/types';
 
@@ -21,5 +21,10 @@ export const menuService = {
     async getMenu(): Promise<Product[]> {
         const querySnapshot = await getDocs(collection(db, MENU_COLLECTION));
         return querySnapshot.docs.map(doc => doc.data() as Product);
+    },
+
+    async updateProductStock(productId: string, newStock: number): Promise<void> {
+        const docRef = doc(db, MENU_COLLECTION, productId);
+        await updateDoc(docRef, { stock: newStock });
     }
 };

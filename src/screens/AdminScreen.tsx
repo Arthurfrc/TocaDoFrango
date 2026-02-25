@@ -48,6 +48,8 @@ export default function AdminScreen({ navigation }: any) {
 		description: '',
 		price: '',
 		category: '',
+		hasStockControl: false,
+		stock: '',
 	});
 
 	const openEditModal = (product?: Product) => {
@@ -58,6 +60,8 @@ export default function AdminScreen({ navigation }: any) {
 				description: product.description,
 				price: Math.round(product.price * 100).toString(),
 				category: product.category,
+				hasStockControl: product.hasStockControl,
+				stock: product.stock?.toString() || '',
 			});
 		} else {
 			setEditingProduct(null);
@@ -66,6 +70,8 @@ export default function AdminScreen({ navigation }: any) {
 				description: '',
 				price: '',
 				category: '',
+				hasStockControl: false,
+				stock: '',
 			});
 		}
 		setModalVisible(true);
@@ -126,6 +132,8 @@ export default function AdminScreen({ navigation }: any) {
 			price: priceValue,
 			category: formData.category,
 			available: true,
+			hasStockControl: formData.hasStockControl,
+			stock: formData.stock ? parseInt(formData.stock) || 0 : undefined,
 		};
 
 		if (editingProduct) {
@@ -264,6 +272,11 @@ export default function AdminScreen({ navigation }: any) {
 							<Text style={styles.productCategory}>{product.category}</Text>
 							<Text style={styles.productDescription}>{product.description}</Text>
 							<Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
+							{product.hasStockControl && (
+								<Text style={styles.stockInfo}>
+									Estoque: {product.stock || 0} unidades
+								</Text>
+							)}
 							<View style={styles.statusContainer}>
 								<Text style={styles.statusText}>
 									Status: {product.available ? '✅ Disponível' : '❌ Indisponível'}
@@ -383,6 +396,61 @@ export default function AdminScreen({ navigation }: any) {
 									onChangeText={(text) => setFormData({ ...formData, category: text })}
 								/>
 							</View>
+							<View style={styles.inputGroup}>
+								<View style={styles.checkboxContainer}>
+									<TouchableOpacity
+										style={styles.checkbox}
+										onPress={() => setFormData({ ...formData, hasStockControl: !formData.hasStockControl })}
+									>
+										<FontAwesome5
+											name={formData.hasStockControl ? "check-square" : "square"}
+											size={20}
+											color={COLORS.primary}
+										/>
+									</TouchableOpacity>
+									<Text style={styles.checkboxLabel}>
+										<FontAwesome5 name="box" size={14} color={COLORS.primary} /> Controlar Estoque
+									</Text>
+								</View>
+							</View>
+
+							{formData.hasStockControl && (
+								<View style={styles.inputGroup}>
+									<Text style={styles.inputLabel}>
+										<FontAwesome5 name="boxes" size={14} color={COLORS.primary} /> Quantidade em Estoque
+									</Text>
+									<View style={styles.stockInputContainer}>
+										<TouchableOpacity
+											style={styles.stockButton}
+											onPress={() => {
+												const currentStock = parseInt(formData.stock) || 0;
+												if (currentStock > 0) {
+													setFormData({ ...formData, stock: (currentStock - 1).toString() });
+												}
+											}}
+										>
+											<FontAwesome5 name="minus" size={16} color={COLORS.primary} />
+										</TouchableOpacity>
+										<TextInput
+											style={[styles.input, styles.stockInput]}
+											placeholder="0"
+											value={formData.stock}
+											onChangeText={(text) => setFormData({ ...formData, stock: text.replace(/\D/g, '') })}
+											keyboardType="numeric"
+											maxLength={4}
+										/>
+										<TouchableOpacity
+											style={styles.stockButton}
+											onPress={() => {
+												const currentStock = parseInt(formData.stock) || 0;
+												setFormData({ ...formData, stock: (currentStock + 1).toString() });
+											}}
+										>
+											<FontAwesome5 name="plus" size={16} color={COLORS.primary} />
+										</TouchableOpacity>
+									</View>
+								</View>
+							)}
 
 							<View style={styles.modalActions}>
 								<TouchableOpacity
@@ -700,5 +768,45 @@ const styles = StyleSheet.create({
 		fontSize: 42,
 		fontWeight: 'bold',
 		color: COLORS.text,
+	},
+	checkboxContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 15,
+	},
+	checkbox: {
+		marginRight: 10,
+	},
+	checkboxLabel: {
+		fontSize: 16,
+		color: COLORS.text,
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
+	},
+	stockInfo: {
+		fontSize: 12,
+		color: '#666',
+		fontStyle: 'italic',
+		marginTop: 2,
+	},
+	stockInputContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 10,
+	},
+	stockInput: {
+		flex: 1,
+		textAlign: 'center',
+	},
+	stockButton: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		backgroundColor: COLORS.background,
+		borderWidth: 1,
+		borderColor: COLORS.primary,
+		justifyContent: 'center',
+		alignItems: 'center',
 	},
 });

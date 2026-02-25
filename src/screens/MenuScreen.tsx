@@ -29,7 +29,7 @@ export default function MenuScreen({ navigation }: any) {
     }
 
     const handleAddToCart = (productId: string) => {
-        addToCart(productId);
+        addToCart(productId, products);
         setAlertConfig({
             title: '✅ Adicionado!',
             message: 'Produto adicionado ao carrinho'
@@ -175,5 +175,10 @@ const styles = StyleSheet.create({
         color: COLORS.background,
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    stockText: {
+        fontSize: 12,
+        color: '#666',
+        fontStyle: 'italic',
     },
 });
