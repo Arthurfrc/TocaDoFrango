@@ -1,5 +1,6 @@
 // src/context/CartContext.tsx
 
+import { APP_CONFIG } from '@/config/app';
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface CartContextType {
@@ -27,7 +28,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
 
     const getDeliveryFee = () => {
-        return deliveryType === 'entrega' ? 3 : 0;
+        return deliveryType === 'entrega' ? APP_CONFIG.DELIVERY_FEE : 0;
     };
 
     const getTotalWithDelivery = () => {

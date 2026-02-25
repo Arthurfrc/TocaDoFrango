@@ -41,7 +41,20 @@ export default function MenuScreen({ navigation }: any) {
         <ScrollView style={styles.container}>
             <Text style={styles.title}>🍗 Cardápio</Text>
 
-            {Object.entries(menuByCategory).map(([category, products]) => (
+            {getTotalItems() > 0 && (
+                <TouchableOpacity
+                    style={styles.checkoutButton}
+                    onPress={() => navigation.navigate('Cart', { cart })}
+                >
+                    <MaterialIcons name="shopping-cart" size={24} color="white" />
+                    <Text style={styles.checkoutText}>
+                        Ver Carrinho ({getTotalItems()} itens)
+                    </Text>
+                </TouchableOpacity>
+            )}
+
+            {Object.entries(menuByCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, products]) => (
+
                 <View key={category} style={styles.categorySection}>
                     <Text style={styles.categoryTitle}>{category}</Text>
 
@@ -63,18 +76,6 @@ export default function MenuScreen({ navigation }: any) {
                     ))}
                 </View>
             ))}
-
-            {getTotalItems() > 0 && (
-                <TouchableOpacity
-                    style={styles.checkoutButton}
-                    onPress={() => navigation.navigate('Cart', { cart })}
-                >
-                    <MaterialIcons name="shopping-cart" size={24} color="white" />
-                    <Text style={styles.checkoutText}>
-                        Ver Carrinho ({getTotalItems()} itens)
-                    </Text>
-                </TouchableOpacity>
-            )}
             <CustomAlert
                 visible={alertVisible}
                 title={alertConfig.title}

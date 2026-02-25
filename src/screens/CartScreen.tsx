@@ -1,6 +1,9 @@
 // src/screens/CartScreen.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp } from '@react-navigation/native';
+import { APP_CONFIG } from '@/config/app';
 import {
     View,
     Text,
@@ -20,7 +23,19 @@ import { COLORS } from '@/constants/colors';
 import { useMenu } from '@/context/MenuContext';
 import { useCart } from '@/context/CartContext';
 
-export default function CartScreen({ route, navigation }: any) {
+type RootStackParamList = {
+    Cart: undefined;
+    Menu: undefined;
+}
+
+type CartScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Cart'>;
+type CartScreenRouteProp = RouteProp<RootStackParamList, 'Cart'>;
+
+export default function CartScreen({ route, navigation }:
+    {
+        route: CartScreenRouteProp;
+        navigation: CartScreenNavigationProp
+    }) {
     const [showPaymentOptions, setShowPaymentOptions] = useState(false);
     const [showDeliveryOptions, setShowDeliveryOptions] = useState(false);
 
@@ -29,18 +44,22 @@ export default function CartScreen({ route, navigation }: any) {
         updateQuantity,
         deliveryType,
         setDeliveryType,
-        getDeliveryFee
+        getDeliveryFee,
+        clearCart
     } = useCart();
     const [customerInfo, setCustomerInfo] = useState({
         name: '',
         phone: '',
-        paymentMethod: ''
+        paymentMethod: '',
+        address: ''
     });
 
     const { products } = useMenu();
 
     const getCartItems = () => {
         const items = [];
+        const unavailableItems = [];
+
         for (const [productId, quantity] of Object.entries(cart || {})) {
             const product = products.find(p => p.id === productId);
             if (product && product.available) { // ← SÓ SE DISPONÍVEL
@@ -48,14 +67,18 @@ export default function CartScreen({ route, navigation }: any) {
                     ...product,
                     quantity: quantity as number
                 });
+            } else if (product) {
+                unavailableItems.push(product.name);
             }
         }
-        return items;
-    };
 
-    const getTotal = () => {
-        const itemsTotal = getCartItems().reduce((total, item) => total + (item.price * item.quantity), 0);
-        return itemsTotal + getDeliveryFee();
+        if (unavailableItems.length > 0) {
+            Alert.alert(
+                '⚠️ Produtos Indisponíveis',
+                `Os seguintes produtos estão sem estoque no momento:\n${unavailableItems.join('\n')}`
+            );
+        }
+        return items;
     };
 
     const formatWhatsAppMessage = () => {
@@ -65,7 +88,10 @@ export default function CartScreen({ route, navigation }: any) {
 
         message += `👤 *Cliente:* ${customerInfo.name}\n`;
         message += `📞 *Tel:* ${customerInfo.phone}\n`;
-        message += `🚚 *Entrega:* ${deliveryType === 'retirada' ? 'Retirada no local' : 'Delivery (+R$3,00)'}\n`;
+        message += `🏍️ *Entrega:* ${deliveryType === 'retirada' ? 'Retirada no local' : `Delivery (+R$ ${APP_CONFIG.DELIVERY_FEE.toFixed(2)})`}\n`;
+        if (deliveryType === 'entrega') {
+            message += `📍 *Endereço:* ${customerInfo.address}\n`;
+        }
         message += `💳 *Pagamento:* ${customerInfo.paymentMethod}\n\n`;
 
         message += `📋 *PEDIDO*\n`;
@@ -76,25 +102,38 @@ export default function CartScreen({ route, navigation }: any) {
         });
 
         if (getDeliveryFee() > 0) {
-            message += `\n🚚 *Taxa de entrega:* R$ ${getDeliveryFee().toFixed(2)}\n`;
+            message += `\n🏍️ *Taxa de entrega:* R$ ${getDeliveryFee().toFixed(2)}\n`;
         }
 
         message += `\n${'═'.repeat(30)}\n`;
-        message += `💰 *TOTAL: R$ ${getTotal().toFixed(2)}*\n`;
+        message += `💰 *TOTAL: R$ ${getTotal.toFixed(2)}*\n`;
         message += `⏱️ *Prazo:* 40-60 min\n`;
         message += `📱 *Enviado pelo App*\n`;
 
         return message;
     };
 
+    const validatePhone = (phone: string): boolean => {
+        const phoneRegex = /^\d{10,11}$/;
+        const cleanedPhone = phone.replace(/\D/g, '');
+        return phoneRegex.test(cleanedPhone);
+    };
+
     const sendToWhatsApp = () => {
-        if (!customerInfo.name || !customerInfo.phone || !customerInfo.paymentMethod) {
+        if (!customerInfo.name || !customerInfo.phone || !customerInfo.paymentMethod ||
+            (deliveryType === 'entrega' && !customerInfo.address)
+        ) {
             Alert.alert('⚠️ Campos Obrigatórios', 'Por favor, preencha todos os seus dados!');
             return;
         }
 
+        if (!validatePhone(customerInfo.phone)) {
+            Alert.alert('⚠️ Telefone Inválido', 'Por favor, digite um número de telefone válido com DDD!');
+            return;
+        }
+
         const message = formatWhatsAppMessage();
-        const phoneNumber = '5584999397770'; // SEU NÚMERO DE WHATSAPP AQUI - MUDAR DEPOIS O NÚMERO PARA O TOCA DO FRANGO
+        const phoneNumber = APP_CONFIG.WHATSAPP_PHONE;
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
         Alert.alert(
@@ -104,20 +143,40 @@ export default function CartScreen({ route, navigation }: any) {
                 { text: 'Cancelar', style: 'cancel' },
                 {
                     text: 'Enviar',
-                    onPress: () => {
-                        // Aqui você abriria o WhatsApp
-                        Linking.openURL(whatsappUrl).catch(() => {
+                    onPress: async () => {
+                        try {
+                            await Linking.openURL(whatsappUrl);
+                            clearCart();
+                            setCustomerInfo({
+                                name: '',
+                                phone: '',
+                                paymentMethod: '',
+                                address: ''
+                            });
+                            setDeliveryType('retirada');
+                            Alert.alert('✅ Sucesso!', 'Pedido enviado para o WhatsApp!',
+                                [{
+                                    text: 'OK',
+                                    onPress: () => {
+                                        navigation.navigate('Menu');
+                                    }
+                                }]
+                            );
+                        } catch (error) {
                             Alert.alert('❌ Erro', 'Não foi possível abrir o WhatsApp. Verifique se o app está instalado.');
-                        })
-                        // Para teste, vamos mostrar a mensagem
-                        Alert.alert('📋 Mensagem Gerada:', message);
+                            Alert.alert('📋 Mensagem:', message);
+                        }
                     }
-                }
-            ]
+                }]
         );
     };
 
-    const cartItems = getCartItems();
+    const cartItems = useMemo(() => getCartItems(), [cart, products]);
+
+    const getTotal = useMemo(() => {
+        const itemsTotal = getCartItems().reduce((total, item) => total + (item.price * item.quantity), 0);
+        return itemsTotal + getDeliveryFee();
+    }, [cartItems, deliveryType]);
 
     if (cartItems.length === 0) {
         return (
@@ -184,7 +243,7 @@ export default function CartScreen({ route, navigation }: any) {
                 {/* Total */}
                 <View style={styles.totalSection}>
                     <FontAwesome5 name="money-bill-wave" size={24} color="white" />
-                    <Text style={styles.totalText}>Total: R$ {getTotal().toFixed(2)}</Text>
+                    <Text style={styles.totalText}>Total: R$ {getTotal.toFixed(2)}</Text>
                 </View>
 
                 {/* Formulário Cliente */}
@@ -229,11 +288,24 @@ export default function CartScreen({ route, navigation }: any) {
                             onPress={() => setShowDeliveryOptions(true)}
                         >
                             <Text style={styles.deliveryText}>
-                                {deliveryType === 'retirada' ? '🏃 Retirada no local' : '🚚 Delivery (+R$3,00)'}
+                                {deliveryType === 'retirada' ? '🏃 Retirada no local' : '🏍️ Delivery (+R$3,00)'}
                             </Text>
                             <FontAwesome5 name="chevron-down" size={16} color={COLORS.text} />
                         </TouchableOpacity>
                     </View>
+                    {deliveryType === 'entrega' && (
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Endereço de entrega:</Text>
+                            <TextInput
+                                style={[styles.input, styles.textArea]}
+                                value={customerInfo.address}
+                                onChangeText={(text) => setCustomerInfo({ ...customerInfo, address: text })}
+                                placeholder="Rua, número, bairro, complemento..."
+                                multiline
+                            />
+                        </View>
+                    )}
+
                 </View>
 
                 {/* Modal de seleção de pagamento */}
@@ -298,7 +370,7 @@ export default function CartScreen({ route, navigation }: any) {
                                     setShowDeliveryOptions(false);
                                 }}
                             >
-                                <Text style={styles.paymentOptionText}>🚚 Delivery (+R$3,00)</Text>
+                                <Text style={styles.paymentOptionText}>🏍️ Delivery (+R${APP_CONFIG.DELIVERY_FEE.toFixed(2)})</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
