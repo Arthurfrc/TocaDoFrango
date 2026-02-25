@@ -11,6 +11,7 @@ interface MenuContextType {
     updateProduct: (productId: string, product: Product) => void;
     deleteProduct: (productId: string) => void;
     toggleProductAvailability: (productId: string) => void;
+    updateProductStock: (productId: string, newStock: number) => void;
 
     hasUnsavedChanges: boolean;
     publishChanges: () => Promise<void>;
@@ -52,6 +53,15 @@ export function MenuProvider({ children }: { children: ReactNode }) {
             )
         );
         setHasUnsavedChanges(true);
+    };
+
+    const updateProductStock = (productId: string, newStock: number) => {
+        setProducts(prev =>
+            (prev || []).map(p =>
+                p.id === productId ? { ...p, stock: newStock } : p
+            )
+        );
+        // Não marca como alteração não salva pois é atualização automática de estoque
     };
 
     const publishChanges = async () => {
@@ -98,6 +108,7 @@ export function MenuProvider({ children }: { children: ReactNode }) {
             updateProduct,
             deleteProduct,
             toggleProductAvailability,
+            updateProductStock,
             hasUnsavedChanges,
             publishChanges,
             discardChanges,

@@ -5,7 +5,7 @@ import { Product } from '@/types';
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Alert } from 'react-native';
 import { menuService } from '@/services/menuService';
-
+import { useMenu } from '@/context/MenuContext';
 
 interface CartContextType {
     cart: { [key: string]: number };
@@ -24,6 +24,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
     const [cart, setCart] = useState<{ [key: string]: number }>({});
     const [deliveryType, setDeliveryType] = useState<'entrega' | 'retirada'>('retirada');
+    const { updateProductStock } = useMenu();
 
     const addToCart = (productId: string, products: Product[]) => {
         const product = products.find(p => p.id === productId);
@@ -49,8 +50,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
             try {
                 // Atualiza no Firebase
                 await menuService.updateProductStock(productId, newStock);
-                // Atualiza localmente também
-                product.stock = newStock;
+                // Sincroniza com MenuContext
+                updateProductStock(productId, newStock);
             } catch (error) {
                 console.error('Erro ao atualizar estoque:', error);
                 Alert.alert('❌ Erro', 'Não foi possível atualizar o estoque');
