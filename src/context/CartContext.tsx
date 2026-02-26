@@ -16,7 +16,7 @@ interface CartContextType {
     deliveryType: 'entrega' | 'retirada';
     setDeliveryType: (type: 'entrega' | 'retirada') => void;
     getDeliveryFee: () => number;
-    decreaseStock: (productId: string, products: Product[]) => Promise<void>;
+    decreaseStock: (productId: string, products: Product[], quantity?: number) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -42,10 +42,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }));
     };
 
-    const decreaseStock = async (productId: string, products: Product[]) => {
+    const decreaseStock = async (productId: string, products: Product[], quantity = 1) => {
         const product = products.find(p => p.id === productId);
         if (product?.hasStockControl && product.stock !== undefined) {
-            const newStock = Math.max(0, product.stock - 1);
+            const newStock = Math.max(0, product.stock - quantity);
 
             try {
                 // Atualiza no Firebase

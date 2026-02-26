@@ -150,7 +150,7 @@ export default function CartScreen({ route, navigation }:
 
                             for (const item of cartItems) {
                                 if (item.hasStockControl) {
-                                    await decreaseStock(item.id, products);
+                                    await decreaseStock(item.id, products, item.quantity);
                                 }
                             }
                             clearCart();
