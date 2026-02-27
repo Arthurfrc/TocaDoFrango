@@ -208,6 +208,16 @@ export default function AdminScreen({ navigation }: any) {
 		setFormData({ ...formData, price: numbers });
 	};
 
+	// Agrupar produtos por categoria
+	const groupedProducts = products.reduce((acc, product) => {
+		const category = product.category || 'Sem categoria';
+		if (!acc[category]) acc[category] = [];
+		acc[category].push(product);
+		return acc;
+	}, {} as Record<string, Product[]>);
+
+	const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
 	if (isLoading) {
 		return (
 			<View style={styles.loading}>
@@ -265,53 +275,87 @@ export default function AdminScreen({ navigation }: any) {
 			)}
 
 			<ScrollView style={styles.content}>
-				{products.map(product => (
-					<View key={product.id} style={styles.productCard}>
-						<View style={styles.productInfo}>
-							<Text style={styles.productName}>{product.name}</Text>
-							<Text style={styles.productCategory}>{product.category}</Text>
-							<Text style={styles.productDescription}>{product.description}</Text>
-							<Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
-							{product.hasStockControl && (
-								<Text style={styles.stockInfo}>
-									Estoque: {product.stock || 0} unidades
-								</Text>
-							)}
-							<View style={styles.statusContainer}>
-								<Text style={styles.statusText}>
-									Status: {product.available ? '✅ Disponível' : '❌ Indisponível'}
-								</Text>
+				{Object.entries(groupedProducts)
+					.sort(([a], [b]) => a.localeCompare(b))
+					.map(([category, categoryProducts]) => {
+						const isExpanded = expandedCategories.has(category);
+						const sortedProducts = categoryProducts.sort((a, b) => a.name.localeCompare(b.name));
+
+						return (
+							<View key={category} style={styles.categoryContainer}>
+								<TouchableOpacity
+									style={styles.categoryHeader}
+									onPress={() => {
+										const newExpanded = new Set(expandedCategories);
+										if (isExpanded) {
+											newExpanded.delete(category);
+										} else {
+											newExpanded.add(category);
+										}
+										setExpandedCategories(newExpanded);
+									}}
+								>
+									<Text style={styles.categoryName}>{category}</Text>
+									<FontAwesome5
+										name={isExpanded ? "chevron-down" : "chevron-right"}
+										size={16}
+										color={COLORS.background}
+									/>
+								</TouchableOpacity>
+
+								{isExpanded && (
+									<View style={styles.productsList}>
+										{sortedProducts.map(product => (
+											<View key={product.id} style={styles.productCard}>
+												<View style={styles.productInfo}>
+													<Text style={styles.productName}>{product.name}</Text>
+													<Text style={styles.productDescription}>{product.description}</Text>
+													<Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
+													{product.hasStockControl && (
+														<Text style={styles.stockInfo}>
+															Estoque: {product.stock || 0} unidades
+														</Text>
+													)}
+													<View style={styles.statusContainer}>
+														<Text style={styles.statusText}>
+															Status: {product.available ? '✅ Disponível' : '❌ Indisponível'}
+														</Text>
+													</View>
+												</View>
+
+												<View style={styles.actions}>
+													<TouchableOpacity
+														style={[styles.actionButton, styles.editButton]}
+														onPress={() => openEditModal(product)}
+													>
+														<FontAwesome5 name="edit" size={16} color="white" />
+													</TouchableOpacity>
+
+													<TouchableOpacity
+														style={[styles.actionButton, styles.toggleButton]}
+														onPress={() => toggleProductAvailability(product.id)}
+													>
+														<FontAwesome5
+															name={product.available ? "eye-slash" : "eye"}
+															size={16}
+															color="white"
+														/>
+													</TouchableOpacity>
+
+													<TouchableOpacity
+														style={[styles.actionButton, styles.deleteButton]}
+														onPress={() => handleDeleteProduct(product.id)}
+													>
+														<FontAwesome5 name="trash" size={16} color="white" />
+													</TouchableOpacity>
+												</View>
+											</View>
+										))}
+									</View>
+								)}
 							</View>
-						</View>
-
-						<View style={styles.actions}>
-							<TouchableOpacity
-								style={[styles.actionButton, styles.editButton]}
-								onPress={() => openEditModal(product)}
-							>
-								<FontAwesome5 name="edit" size={16} color="white" />
-							</TouchableOpacity>
-
-							<TouchableOpacity
-								style={[styles.actionButton, styles.toggleButton]}
-								onPress={() => toggleProductAvailability(product.id)}
-							>
-								<FontAwesome5
-									name={product.available ? "eye-slash" : "eye"}
-									size={16}
-									color="white"
-								/>
-							</TouchableOpacity>
-
-							<TouchableOpacity
-								style={[styles.actionButton, styles.deleteButton]}
-								onPress={() => handleDeleteProduct(product.id)}
-							>
-								<FontAwesome5 name="trash" size={16} color="white" />
-							</TouchableOpacity>
-						</View>
-					</View>
-				))}
+						);
+					})}
 			</ScrollView>
 
 			{/* Modal de Edição */}
@@ -532,12 +576,6 @@ const styles = StyleSheet.create({
 		fontSize: 18,
 		fontWeight: 'bold',
 		color: COLORS.text,
-		marginBottom: 5,
-	},
-	productCategory: {
-		fontSize: 14,
-		color: COLORS.primary,
-		fontWeight: 'bold',
 		marginBottom: 5,
 	},
 	productDescription: {
@@ -808,5 +846,25 @@ const styles = StyleSheet.create({
 		borderColor: COLORS.primary,
 		justifyContent: 'center',
 		alignItems: 'center',
+	},
+	categoryContainer: {
+		marginBottom: 15,
+	},
+	categoryHeader: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		backgroundColor: COLORS.primary,
+		padding: 15,
+		borderRadius: 10,
+		marginBottom: 5,
+	},
+	categoryName: {
+		fontSize: 18,
+		fontWeight: 'bold',
+		color: COLORS.background,
+	},
+	productsList: {
+		paddingLeft: 10,
 	},
 });
