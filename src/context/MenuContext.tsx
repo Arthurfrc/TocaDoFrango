@@ -29,14 +29,28 @@ export function MenuProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     const addProduct = (product: Product) => {
-        setProducts(prev => [...(prev || []), product].sort((a, b) => a.name.localeCompare(b.name)));
+        setProducts(prev => [...(prev || []), product].sort((a, b) => {
+            // 1. Ordena por categoria
+            const categoryCompare = (a.category || '').localeCompare(b.category || '');
+            if (categoryCompare !== 0) return categoryCompare;
+
+            // 2. Se mesma categoria, ordena por nome
+            return a.name.localeCompare(b.name);
+        }));
         setHasUnsavedChanges(true);
     };
 
     const updateProduct = (productId: string, updatedProduct: Product) => {
         setProducts(prev =>
             (prev || []).map(p => p.id === productId ? updatedProduct : p)
-                .sort((a, b) => a.name.localeCompare(b.name))
+                .sort((a, b) => {
+                    // 1. Ordena por categoria
+                    const categoryCompare = (a.category || '').localeCompare(b.category || '');
+                    if (categoryCompare !== 0) return categoryCompare;
+
+                    // 2. Se mesma categoria, ordena por nome
+                    return a.name.localeCompare(b.name);
+                })
         );
         setHasUnsavedChanges(true);
     };
@@ -88,7 +102,14 @@ export function MenuProvider({ children }: { children: ReactNode }) {
         const loadMenu = async () => {
             try {
                 const menuData = await menuService.getMenu();
-                setProducts(menuData.sort((a, b) => a.name.localeCompare(b.name)));
+                setProducts(menuData.sort((a, b) => {
+                    // 1. Ordena por categoria
+                    const categoryCompare = (a.category || '').localeCompare(b.category || '');
+                    if (categoryCompare !== 0) return categoryCompare;
+
+                    // 2. Se mesma categoria, ordena por nome
+                    return a.name.localeCompare(b.name);
+                }));
             } catch (error) {
                 console.error('Erro ao carregar menu:', error);
                 setProducts([]);
