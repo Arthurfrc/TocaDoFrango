@@ -1,6 +1,6 @@
 // src/screens/AdminScreen.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
 	View,
 	Text,
@@ -10,9 +10,12 @@ import {
 	TextInput,
 	Modal,
 	KeyboardAvoidingView,
-	Platform
+	Platform,
+	Dimensions
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import DraggableFlatList from 'react-native-draggable-flatlist';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { COLORS } from '@/constants/colors';
 import { Product } from '@/types';
@@ -51,6 +54,10 @@ export default function AdminScreen({ navigation }: any) {
 		hasStockControl: false,
 		stock: '',
 	});
+
+	const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+	const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
+	const [isReordering, setIsReordering] = useState(false);
 
 	const openEditModal = (product?: Product) => {
 		if (product) {
@@ -208,6 +215,40 @@ export default function AdminScreen({ navigation }: any) {
 		setFormData({ ...formData, price: numbers });
 	};
 
+	const loadCategoryOrder = async () => {
+		try {
+			const saved = await AsyncStorage.getItem('adminCategoryOrder');
+			const categories = Object.keys(groupedProducts).sort();
+			
+			if (saved) {
+				const savedOrder = JSON.parse(saved);
+				// Filtra apenas categorias que ainda existem
+				const validOrder = savedOrder.filter((cat: string) => categories.includes(cat));
+				// Adiciona novas categorias no final
+				const newCategories = categories.filter(cat => !validOrder.includes(cat));
+				setCategoryOrder([...validOrder, ...newCategories]);
+			} else {
+				setCategoryOrder(categories);
+			}
+		} catch (error) {
+			console.error('Erro ao carregar ordem:', error);
+			setCategoryOrder(Object.keys(groupedProducts).sort());
+		}
+	};
+
+	const saveCategoryOrder = async (order: string[]) => {
+		try {
+			await AsyncStorage.setItem('adminCategoryOrder', JSON.stringify(order));
+			setCategoryOrder(order);
+		} catch (error) {
+			console.error('Erro ao salvar ordem:', error);
+		}
+	};
+
+	useEffect(() => {
+		loadCategoryOrder();
+	}, [products]);
+
 	if (isLoading) {
 		return (
 			<View style={styles.loading}>
@@ -232,7 +273,21 @@ export default function AdminScreen({ navigation }: any) {
 				</View>
 				<View style={styles.headerRight}>
 					<TouchableOpacity
-						style={styles.addButton}
+						style={[styles.addButton, isReordering && styles.cancelButton]}
+						onPress={() => {
+							if (isReordering) {
+								setIsReordering(false);
+							} else {
+								setIsReordering(true);
+							}
+						}}
+					>
+						<Text style={styles.addButtonText}>
+							{isReordering ? 'Cancelar' : 'Reorganizar'}
+						</Text>
+					</TouchableOpacity>
+					<TouchableOpacity
+						style={[styles.addButton, styles.addButtonMargin]}
 						onPress={() => openEditModal()}
 					>
 						<Text style={styles.addButtonText}>+ Produto</Text>
@@ -264,55 +319,118 @@ export default function AdminScreen({ navigation }: any) {
 				</View>
 			)}
 
-			<ScrollView style={styles.content}>
-				{products.map(product => (
-					<View key={product.id} style={styles.productCard}>
-						<View style={styles.productInfo}>
-							<Text style={styles.productName}>{product.name}</Text>
-							<Text style={styles.productCategory}>{product.category}</Text>
-							<Text style={styles.productDescription}>{product.description}</Text>
-							<Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
-							{product.hasStockControl && (
-								<Text style={styles.stockInfo}>
-									Estoque: {product.stock || 0} unidades
-								</Text>
-							)}
-							<View style={styles.statusContainer}>
-								<Text style={styles.statusText}>
-									Status: {product.available ? '✅ Disponível' : '❌ Indisponível'}
-								</Text>
-							</View>
-						</View>
-
-						<View style={styles.actions}>
+			<DraggableFlatList
+				style={styles.content}
+				data={categoryOrder.map(category => ({ key: category, category }))}
+				renderItem={({ item, index, drag, isActive }) => {
+					const category = item.category;
+					const isExpanded = expandedCategories.has(category);
+					const sortedProducts = groupedProducts[category]?.sort((a, b) => a.name.localeCompare(b.name)) || [];
+					
+					return (
+						<View style={styles.categoryContainer}>
 							<TouchableOpacity
-								style={[styles.actionButton, styles.editButton]}
-								onPress={() => openEditModal(product)}
+								style={[
+									styles.categoryHeader,
+									isReordering && styles.reorderingHeader,
+									isActive && styles.draggedHeader
+								]}
+								onPress={() => {
+									if (isReordering) return;
+									
+									const newExpanded = new Set(expandedCategories);
+									if (isExpanded) {
+										newExpanded.delete(category);
+									} else {
+										newExpanded.add(category);
+									}
+									setExpandedCategories(newExpanded);
+								}}
+								onLongPress={() => {
+									if (!isReordering) {
+										setIsReordering(true);
+									}
+								}}
+								disabled={isActive}
 							>
-								<FontAwesome5 name="edit" size={16} color="white" />
-							</TouchableOpacity>
-
-							<TouchableOpacity
-								style={[styles.actionButton, styles.toggleButton]}
-								onPress={() => toggleProductAvailability(product.id)}
-							>
+								<View style={styles.categoryLeft}>
+									{isReordering && (
+										<TouchableOpacity
+											style={styles.gripButton}
+											onPressIn={drag}
+										>
+											<FontAwesome5 name="grip-lines" size={16} color={COLORS.background} />
+										</TouchableOpacity>
+									)}
+									<Text style={styles.categoryName}>{category}</Text>
+								</View>
 								<FontAwesome5
-									name={product.available ? "eye-slash" : "eye"}
+									name={isExpanded ? "chevron-down" : "chevron-right"}
 									size={16}
-									color="white"
+									color={COLORS.background}
 								/>
 							</TouchableOpacity>
+							
+							{isExpanded && !isReordering && (
+								<View style={styles.productsList}>
+									{sortedProducts.map(product => (
+										<View key={product.id} style={styles.productCard}>
+											<View style={styles.productInfo}>
+												<Text style={styles.productName}>{product.name}</Text>
+												<Text style={styles.productDescription}>{product.description}</Text>
+												<Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
+												{product.hasStockControl && (
+													<Text style={styles.stockInfo}>
+														Estoque: {product.stock || 0} unidades
+													</Text>
+												)}
+												<View style={styles.statusContainer}>
+													<Text style={styles.statusText}>
+														Status: {product.available ? '✅ Disponível' : '❌ Indisponível'}
+													</Text>
+												</View>
+											</View>
 
-							<TouchableOpacity
-								style={[styles.actionButton, styles.deleteButton]}
-								onPress={() => handleDeleteProduct(product.id)}
-							>
-								<FontAwesome5 name="trash" size={16} color="white" />
-							</TouchableOpacity>
+											<View style={styles.actions}>
+												<TouchableOpacity
+													style={[styles.actionButton, styles.editButton]}
+													onPress={() => openEditModal(product)}
+												>
+													<FontAwesome5 name="edit" size={16} color="white" />
+												</TouchableOpacity>
+
+												<TouchableOpacity
+													style={[styles.actionButton, styles.toggleButton]}
+													onPress={() => toggleProductAvailability(product.id)}
+												>
+													<FontAwesome5
+														name={product.available ? "eye-slash" : "eye"}
+														size={16}
+														color="white"
+													/>
+												</TouchableOpacity>
+
+												<TouchableOpacity
+													style={[styles.actionButton, styles.deleteButton]}
+													onPress={() => handleDeleteProduct(product.id)}
+												>
+													<FontAwesome5 name="trash" size={16} color="white" />
+												</TouchableOpacity>
+											</View>
+										</View>
+									))}
+								</View>
+							)}
 						</View>
-					</View>
-				))}
-			</ScrollView>
+					);
+				}}
+				onDragEnd={({ data }) => {
+					const newOrder = data.map(item => item.category);
+					saveCategoryOrder(newOrder);
+				}}
+				keyExtractor={(item) => item.key}
+				extraData={isReordering}
+			/>
 
 			{/* Modal de Edição */}
 			<Modal
@@ -808,5 +926,49 @@ const styles = StyleSheet.create({
 		borderColor: COLORS.primary,
 		justifyContent: 'center',
 		alignItems: 'center',
+	},
+	categoryContainer: {
+		marginBottom: 15,
+	},
+	categoryHeader: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		backgroundColor: COLORS.primary,
+		padding: 15,
+		borderRadius: 10,
+		marginBottom: 5,
+	},
+	categoryLeft: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		flex: 1,
+	},
+	gripButton: {
+		marginRight: 10,
+		padding: 5,
+	},
+	reorderingHeader: {
+		backgroundColor: '#FF6B6B',
+	},
+	draggedHeader: {
+		opacity: 0.8,
+		transform: [{ scale: 1.02 }],
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.25,
+		shadowRadius: 3.84,
+		elevation: 5,
+	},
+	categoryName: {
+		fontSize: 18,
+		fontWeight: 'bold',
+		color: COLORS.background,
+	},
+	productsList: {
+		paddingLeft: 10,
+	},
+	addButtonMargin: {
+		marginLeft: 10,
 	},
 });
