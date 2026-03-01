@@ -1,11 +1,19 @@
 // src/types/index.ts
 
+export interface Category {
+    id: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export interface Product {
     id: string;
     name: string;
     description: string;
     price: number;
-    category: string;
+    categoryId: string;
+    category?: string;
     image?: string;
     available: boolean;
     hasStockControl: boolean;

@@ -10,14 +10,20 @@ import {
 	TextInput,
 	Modal,
 	KeyboardAvoidingView,
-	Platform
+	Platform,
+	Alert
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
 import { COLORS } from '@/constants/colors';
-import { Product } from '@/types';
+import { Product, Category } from '@/types';
+import { getCategoryName } from '@/utils';
 import { useMenu } from '@/context/MenuContext';
+
 import CustomAlert from '@/components/CustomAlert';
+import CustomModal from '@/components/CustomModal';
+import CustomFormModal from '@/components/CustomFormModal';
+import CustomProductModal from '@/components/CustomProductModal';
 
 export default function AdminScreen({ navigation }: any) {
 	const { products,
@@ -30,6 +36,10 @@ export default function AdminScreen({ navigation }: any) {
 		discardChanges,
 		isPublishing,
 		isLoading,
+		categories,
+		addCategory,
+		updateCategory,
+		deleteCategory
 	} = useMenu();
 	const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 	const [modalVisible, setModalVisible] = useState(false);
@@ -43,37 +53,18 @@ export default function AdminScreen({ navigation }: any) {
 		cancelText: undefined as string | undefined,
 	});
 
-	const [formData, setFormData] = useState({
-		name: '',
-		description: '',
-		price: '',
-		category: '',
-		hasStockControl: false,
-		stock: '',
-	});
+	const [showOptionsModal, setShowOptionsModal] = useState(false);
+	const [showCategoryModal, setShowCategoryModal] = useState(false);
+	const [categoryName, setCategoryName] = useState('');
+	const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+	const [showCategorySelector, setShowCategorySelector] = useState(false);
+	const [selectedProductForCategory, setSelectedProductForCategory] = useState<Product | null>(null);
+	const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
 	const openEditModal = (product?: Product) => {
-		if (product) {
-			setEditingProduct(product);
-			setFormData({
-				name: product.name,
-				description: product.description,
-				price: Math.round(product.price * 100).toString(),
-				category: product.category,
-				hasStockControl: product.hasStockControl,
-				stock: product.stock?.toString() || '',
-			});
-		} else {
-			setEditingProduct(null);
-			setFormData({
-				name: '',
-				description: '',
-				price: '',
-				category: '',
-				hasStockControl: false,
-				stock: '',
-			});
-		}
+		setEditingProduct(product || null);
+		setSelectedCategoryId(product?.categoryId || '');
 		setModalVisible(true);
 	};
 
@@ -103,62 +94,6 @@ export default function AdminScreen({ navigation }: any) {
 		setAlertVisible(true);
 	};
 
-	const displayPrice = (value: string): string => {
-		if (!value) return '';
-		return formatPrice(value);
-	};
-
-	// Atualizar a função saveProduct para tratar o novo formato
-	const saveProduct = () => {
-		if (!formData.name || !formData.price || !formData.category) {
-			showAlert(
-				'⚠️ Campos Obrigatórios',
-				'Preencha nome, preço e categoria!',
-				() => { },
-				() => { },
-				'Confirmar',
-				''
-			);
-			return;
-		}
-
-		// Converte o preço formatado para número
-		const priceValue = parseInt(formData.price) / 100;
-
-		const productData: Product = {
-			id: editingProduct?.id || Date.now().toString(),
-			name: formData.name,
-			description: formData.description,
-			price: priceValue,
-			category: formData.category,
-			available: true,
-			hasStockControl: formData.hasStockControl,
-			stock: formData.stock ? parseInt(formData.stock) || 0 : undefined,
-		};
-
-		if (editingProduct) {
-			updateProduct(editingProduct.id, productData);
-			showAlert(
-				'✅ Sucesso',
-				'Produto atualizado!',
-				() => setModalVisible(false),
-				() => { },
-				'Confirmar',
-				''
-			);
-		} else {
-			addProduct(productData);
-			showAlert(
-				'✅ Sucesso',
-				'Produto adicionado!',
-				() => setModalVisible(false),
-				() => { },
-				'Confirmar',
-				''
-			);
-		}
-	};
-
 	const handleDeleteProduct = (productId: string) => {
 		showAlert(
 			'🗑️ Confirmar Exclusão',
@@ -173,44 +108,9 @@ export default function AdminScreen({ navigation }: any) {
 		);
 	};
 
-	// Função para formatar o preço estilo MercadoLivre
-	const formatPrice = (value: string): string => {
-		if (!value) return '';
-
-		// Remove tudo que não é número
-		const numbers = value.replace(/\D/g, '');
-
-		if (numbers.length === 0) return '';
-
-		// Conte o valor como centavos diretos (estilo MercadoLivre)
-		// Se digitar "3500" -> R$ 35,00
-		// Se digitar "35" -> R$ 0,35
-		const cents = parseInt(numbers);
-
-		// Formata como moeda brasileira
-		return (cents / 100).toFixed(2).replace('.', ',');
-	};
-
-	// Função para handle da mudança do preço
-	const handlePriceChange = (text: string) => {
-		// Remove formatação anterior (vírgula e ponto)
-		const numbers = text.replace(/\D/g, '');
-
-		if (numbers.length === 0) {
-			setFormData({ ...formData, price: '' });
-			return;
-		}
-
-		// Limita a 9 dígitos (99999.99)
-		if (numbers.length > 9) return;
-
-		// Armazena os números puros para conversão correta
-		setFormData({ ...formData, price: numbers });
-	};
-
 	// Agrupar produtos por categoria
 	const groupedProducts = products.reduce((acc, product) => {
-		const category = product.category || 'Sem categoria';
+		const category = getCategoryName(product, categories);
 		if (!acc[category]) acc[category] = [];
 		acc[category].push(product);
 		return acc;
@@ -240,14 +140,6 @@ export default function AdminScreen({ navigation }: any) {
 						<Text style={styles.title}>Painel Admin</Text>
 					</View>
 				</View>
-				<View style={styles.headerRight}>
-					<TouchableOpacity
-						style={styles.addButton}
-						onPress={() => openEditModal()}
-					>
-						<Text style={styles.addButtonText}>+ Produto</Text>
-					</TouchableOpacity>
-				</View>
 			</View>
 
 			{hasUnsavedChanges && (
@@ -274,247 +166,314 @@ export default function AdminScreen({ navigation }: any) {
 				</View>
 			)}
 
-			<ScrollView style={styles.content}>
-				{Object.entries(groupedProducts)
-					.sort(([a], [b]) => a.localeCompare(b))
-					.map(([category, categoryProducts]) => {
-						const isExpanded = expandedCategories.has(category);
-						const sortedProducts = categoryProducts.sort((a, b) => a.name.localeCompare(b.name));
+			<ScrollView style={[styles.content, { maxHeight: 250 }]}>
+				{/* Seção de Categorias */}
+				<View style={styles.sectionContainer}>
+					<View style={styles.sectionHeader}>
+						<Text style={styles.sectionTitle}>📂 Categorias</Text>
+						<TouchableOpacity
+							style={styles.addCategoryButton}
+							onPress={() => setShowCategoryModal(true)}
+						>
+							<FontAwesome5 name="plus" size={16} color={COLORS.background} />
+						</TouchableOpacity>
+					</View>
 
-						return (
-							<View key={category} style={styles.categoryContainer}>
-								<TouchableOpacity
-									style={styles.categoryHeader}
-									onPress={() => {
-										const newExpanded = new Set(expandedCategories);
-										if (isExpanded) {
-											newExpanded.delete(category);
-										} else {
-											newExpanded.add(category);
+					{categories.length === 0 ? (
+						<View style={styles.emptyContainer}>
+							<Text style={styles.emptyText}>Nenhuma categoria cadastrada</Text>
+							<Text style={styles.emptySubtext}>Adicione categorias para organizar seus produtos</Text>
+						</View>
+					) : (
+						categories.map((category) => (
+							<View key={category.id} style={styles.categoryCard}>
+								<View style={styles.categoryInfo}>
+									<Text style={styles.categoryName}>{category.name}</Text>
+									<Text style={styles.categoryDate}>
+										Criada em {
+											(category.createdAt as any)?.toDate?.()?.toLocaleDateString('pt-BR') ||
+											(category.createdAt ? new Date(category.createdAt).toLocaleDateString('pt-BR') : 'Data não disponível')
 										}
-										setExpandedCategories(newExpanded);
-									}}
-								>
-									<Text style={styles.categoryName}>{category}</Text>
-									<FontAwesome5
-										name={isExpanded ? "chevron-down" : "chevron-right"}
-										size={16}
-										color={COLORS.background}
-									/>
-								</TouchableOpacity>
-
-								{isExpanded && (
-									<View style={styles.productsList}>
-										{sortedProducts.map(product => (
-											<View key={product.id} style={styles.productCard}>
-												<View style={styles.productInfo}>
-													<Text style={styles.productName}>{product.name}</Text>
-													<Text style={styles.productDescription}>{product.description}</Text>
-													<Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
-													{product.hasStockControl && (
-														<Text style={styles.stockInfo}>
-															Estoque: {product.stock || 0} unidades
-														</Text>
-													)}
-													<View style={styles.statusContainer}>
-														<Text style={styles.statusText}>
-															Status: {product.available ? '✅ Disponível' : '❌ Indisponível'}
-														</Text>
-													</View>
-												</View>
-
-												<View style={styles.actions}>
-													<TouchableOpacity
-														style={[styles.actionButton, styles.editButton]}
-														onPress={() => openEditModal(product)}
-													>
-														<FontAwesome5 name="edit" size={16} color="white" />
-													</TouchableOpacity>
-
-													<TouchableOpacity
-														style={[styles.actionButton, styles.toggleButton]}
-														onPress={() => toggleProductAvailability(product.id)}
-													>
-														<FontAwesome5
-															name={product.available ? "eye-slash" : "eye"}
-															size={16}
-															color="white"
-														/>
-													</TouchableOpacity>
-
-													<TouchableOpacity
-														style={[styles.actionButton, styles.deleteButton]}
-														onPress={() => handleDeleteProduct(product.id)}
-													>
-														<FontAwesome5 name="trash" size={16} color="white" />
-													</TouchableOpacity>
-												</View>
-											</View>
-										))}
-									</View>
-								)}
+									</Text>
+								</View>
+								<View style={styles.categoryActions}>
+									<TouchableOpacity
+										style={styles.editButton}
+										onPress={() => {
+											setEditingCategory(category);
+											setCategoryName(category.name);
+											setShowCategoryModal(true);
+										}}
+									>
+										<FontAwesome5 name="edit" size={16} color={COLORS.primary} />
+									</TouchableOpacity>
+									<TouchableOpacity
+										style={styles.deleteButton}
+										onPress={() => {
+											Alert.alert(
+												'Confirmar Exclusão',
+												`Deseja excluir a categoria "${category.name}"?`,
+												[
+													{ text: 'Cancelar', style: 'cancel' },
+													{
+														text: 'Excluir',
+														style: 'destructive',
+														onPress: () => deleteCategory(category.id),
+													},
+												]
+											);
+										}}
+									>
+										<FontAwesome5 name="trash" size={16} color="#FF5252" />
+									</TouchableOpacity>
+								</View>
 							</View>
-						);
-					})}
+						))
+					)}
+				</View>
 			</ScrollView>
 
-			{/* Modal de Edição */}
-			<Modal
-				animationType="slide"
-				transparent={true}
-				visible={modalVisible}
-				onRequestClose={() => setModalVisible(false)}
-			>
-				<KeyboardAvoidingView
-					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-					style={styles.modalOverlay}
-				>
-					<View style={styles.modalContent}>
-						<ScrollView showsVerticalScrollIndicator={false}>
-							<Text style={styles.modalTitle}>
-								{editingProduct ? 'Editar Produto' : 'Novo Produto'}
-							</Text>
+			{/* Seção de Produtos */}
 
-							{/* Campo Nome */}
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>
-									<FontAwesome5 name="tag" size={14} color={COLORS.primary} /> Nome do Produto
-								</Text>
-								<TextInput
-									style={styles.input}
-									placeholder="Digite o nome do produto"
-									value={formData.name}
-									onChangeText={(text) => setFormData({ ...formData, name: text })}
-								/>
-							</View>
-
-							{/* Campo Descrição */}
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>
-									<FontAwesome5 name="align-left" size={14} color={COLORS.primary} /> Descrição
-								</Text>
-								<TextInput
-									style={[styles.input, styles.textArea]}
-									placeholder="Descreva seu produto..."
-									value={formData.description}
-									onChangeText={(text) => setFormData({ ...formData, description: text })}
-									multiline
-								/>
-							</View>
-
-							{/* Campo Preço - Estilo OLX */}
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>
-									<FontAwesome5 name="money-bill-wave" size={14} color={COLORS.primary} /> Preço
-								</Text>
-								<View style={styles.priceContainer}>
-									<Text style={styles.pricePrefix}>R$</Text>
-									<TextInput
-										style={[
-											styles.priceInput,
-											displayPrice(formData.price) === '0,00' && { color: '#CCCCCC' }
-										]}
-										placeholder="0,00"
-										placeholderTextColor="#CCCCCC"
-										value={displayPrice(formData.price)}
-										onChangeText={handlePriceChange}
-										keyboardType="numeric"
-										maxLength={12}
-										selection={{
-											start: displayPrice(formData.price).length,
-											end: displayPrice(formData.price).length,
-										}}
-									/>
-								</View>
-							</View>
-
-							{/* Campo Categoria */}
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>
-									<FontAwesome5 name="folder" size={14} color={COLORS.primary} /> Categoria
-								</Text>
-								<TextInput
-									style={styles.input}
-									placeholder="Ex: Lanches, Bebidas"
-									value={formData.category}
-									onChangeText={(text) => setFormData({ ...formData, category: text })}
-								/>
-							</View>
-							<View style={styles.inputGroup}>
-								<View style={styles.checkboxContainer}>
-									<TouchableOpacity
-										style={styles.checkbox}
-										onPress={() => setFormData({ ...formData, hasStockControl: !formData.hasStockControl })}
-									>
-										<FontAwesome5
-											name={formData.hasStockControl ? "check-square" : "square"}
-											size={20}
-											color={COLORS.primary}
-										/>
-									</TouchableOpacity>
-									<Text style={styles.checkboxLabel}>
-										<FontAwesome5 name="box" size={14} color={COLORS.primary} /> Controlar Estoque
-									</Text>
-								</View>
-							</View>
-
-							{formData.hasStockControl && (
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>
-										<FontAwesome5 name="boxes" size={14} color={COLORS.primary} /> Quantidade em Estoque
-									</Text>
-									<View style={styles.stockInputContainer}>
-										<TouchableOpacity
-											style={styles.stockButton}
-											onPress={() => {
-												const currentStock = parseInt(formData.stock) || 0;
-												if (currentStock > 0) {
-													setFormData({ ...formData, stock: (currentStock - 1).toString() });
-												}
-											}}
-										>
-											<FontAwesome5 name="minus" size={16} color={COLORS.primary} />
-										</TouchableOpacity>
-										<TextInput
-											style={[styles.input, styles.stockInput]}
-											placeholder="0"
-											value={formData.stock}
-											onChangeText={(text) => setFormData({ ...formData, stock: text.replace(/\D/g, '') })}
-											keyboardType="numeric"
-											maxLength={4}
-										/>
-										<TouchableOpacity
-											style={styles.stockButton}
-											onPress={() => {
-												const currentStock = parseInt(formData.stock) || 0;
-												setFormData({ ...formData, stock: (currentStock + 1).toString() });
-											}}
-										>
-											<FontAwesome5 name="plus" size={16} color={COLORS.primary} />
-										</TouchableOpacity>
-									</View>
-								</View>
-							)}
-
-							<View style={styles.modalActions}>
-								<TouchableOpacity
-									style={[styles.modalButton, styles.cancelButton]}
-									onPress={() => setModalVisible(false)}
-								>
-									<Text style={styles.modalButtonTextCancel}>Cancelar</Text>
-								</TouchableOpacity>
-
-								<TouchableOpacity
-									style={[styles.modalButton, styles.saveButton]}
-									onPress={saveProduct}
-								>
-									<Text style={styles.modalButtonTextConfirm}>Salvar</Text>
-								</TouchableOpacity>
-							</View>
-						</ScrollView>
+			<ScrollView style={[styles.content, { marginBottom: 40, borderTopWidth: 1, borderTopColor: COLORS.text, borderStyle: 'solid', marginTop: 5 }]}>
+				<View style={styles.sectionContainer}>
+					<View style={styles.sectionHeader}>
+						<Text style={styles.sectionTitle}>🍔 Produtos</Text>
+						<TouchableOpacity
+							style={styles.addCategoryButton}
+							onPress={() => openEditModal()}
+						>
+							<FontAwesome5 name="plus" size={16} color={COLORS.background} />
+						</TouchableOpacity>
 					</View>
-				</KeyboardAvoidingView>
+					{products.length === 0 ? (
+						<View style={styles.emptyContainer}>
+							<FontAwesome5 name="box-open" size={48} color={COLORS.primary} />
+							<Text style={styles.emptyText}>
+								Nenhum produto cadastrado. Adicione produtos para começar!
+							</Text>
+						</View>
+					) :
+
+						(Object.entries(groupedProducts)
+							.sort(([a], [b]) => a.localeCompare(b))
+							.map(([category, categoryProducts]) => {
+								const isExpanded = expandedCategories.has(category);
+								const sortedProducts = categoryProducts.sort((a, b) => a.name.localeCompare(b.name));
+
+								return (
+									<View key={category} style={styles.categoryContainer}>
+										<TouchableOpacity
+											style={[styles.categoryHeader, isExpanded && { marginBottom: 5 }]}
+											onPress={() => {
+												const newExpanded = new Set(expandedCategories);
+												if (isExpanded) {
+													newExpanded.delete(category);
+												} else {
+													newExpanded.add(category);
+												}
+												setExpandedCategories(newExpanded);
+											}}
+										>
+											<Text style={styles.categoryCardName}>{category}</Text>
+											<FontAwesome5
+												name={isExpanded ? "chevron-down" : "chevron-right"}
+												size={16}
+												color={COLORS.text}
+											/>
+										</TouchableOpacity>
+
+										{isExpanded && (
+											<View style={styles.productsList}>
+												{sortedProducts.map(product => (
+													<View key={product.id} style={styles.productCard}>
+														<View style={styles.productInfo}>
+															<Text style={styles.productName}>{product.name}</Text>
+															<Text style={styles.productDescription}>{product.description}</Text>
+															<Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
+															{product.hasStockControl && (
+																<Text style={styles.stockInfo}>
+																	Estoque: {product.stock || 0} unidades
+																</Text>
+															)}
+															<View style={styles.statusContainer}>
+																<Text style={styles.statusText}>
+																	Status: {product.available ? '✅ Disponível' : '❌ Indisponível'}
+																</Text>
+															</View>
+														</View>
+
+														<View style={styles.actions}>
+															<TouchableOpacity
+																style={[styles.actionButton, styles.editButton]}
+																onPress={() => openEditModal(product)}
+															>
+																<FontAwesome5 name="edit" size={16} color="black" />
+															</TouchableOpacity>
+
+															<TouchableOpacity
+																style={[styles.actionButton, styles.toggleButton]}
+																onPress={() => toggleProductAvailability(product.id)}
+															>
+																<FontAwesome5
+																	name={product.available ? "eye-slash" : "eye"}
+																	size={16}
+																	color="black"
+																/>
+															</TouchableOpacity>
+
+															<TouchableOpacity
+																style={[styles.actionButton, styles.deleteButton]}
+																onPress={() => handleDeleteProduct(product.id)}
+															>
+																<FontAwesome5 name="trash" size={16} color="black" />
+															</TouchableOpacity>
+														</View>
+													</View>
+												))}
+											</View>
+										)}
+									</View>
+								);
+							})
+						)}
+				</View>
+			</ScrollView>
+
+			{/* Modal de opções */}
+			<CustomModal
+				visible={showOptionsModal}
+				title="O que você deseja adicionar?"
+				options={[
+					{
+						id: 'product',
+						title: 'Novo Produto',
+						icon: '🍔',
+						onPress: () => openEditModal(),
+					},
+					{
+						id: 'category',
+						title: 'Nova Categoria',
+						icon: '📂',
+						onPress: () => {
+							setShowCategoryModal(true);
+						},
+					},
+				]}
+				onClose={() => setShowOptionsModal(false)}
+			/>
+
+			{/* Modal de Nova Categoria */}
+			<CustomFormModal
+				visible={showCategoryModal}
+				title={editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
+				fieldLabel="Nome da Categoria"
+				fieldValue={categoryName}
+				fieldPlaceholder="Ex: Lanches, Bebidas, Sobremesas"
+				onFieldChange={setCategoryName}
+				onSave={() => {
+					if (!categoryName.trim()) {
+						Alert.alert('Erro', 'Digite um nome para a categoria');
+						return;
+					}
+
+					if (editingCategory) {
+						// Editando categoria existente
+						const updatedCategory: Category = {
+							...editingCategory,
+							name: categoryName.trim(),
+							updatedAt: new Date(),
+						};
+						updateCategory(editingCategory.id, updatedCategory);
+					} else {
+						// Criando nova categoria
+						const newCategory: Category = {
+							id: Date.now().toString(),
+							name: categoryName.trim(),
+							createdAt: new Date(),
+							updatedAt: new Date(),
+						};
+						addCategory(newCategory);
+					}
+
+					setShowCategoryModal(false);
+					setCategoryName('');
+					setEditingCategory(null);
+				}}
+				onCancel={() => {
+					setShowCategoryModal(false);
+					setCategoryName('');
+					setEditingCategory(null);
+				}}
+				icon="📂"
+			/>
+
+			{/* Modal de Seleção de Categoria */}
+			<Modal
+				visible={showCategorySelector}
+				transparent={true}
+				animationType="fade"
+				onRequestClose={() => setShowCategorySelector(false)}
+			>
+				<View style={styles.modalOverlay}>
+					<View style={styles.modalContent}>
+						<Text style={styles.modalTitle}>Selecione uma Categoria</Text>
+
+						{categories.length === 0 ? (
+							<View style={styles.emptyContainer}>
+								<Text style={styles.emptyText}>Nenhuma categoria cadastrada</Text>
+								<Text style={styles.emptySubtext}>Crie categorias primeiro</Text>
+							</View>
+						) : (
+							categories.map((category) => (
+								<TouchableOpacity
+									key={category.id}
+									style={styles.categoryOption}
+									onPress={() => {
+										setSelectedCategoryId(category.id);
+										setShowCategorySelector(false);
+										setSelectedProductForCategory(null);
+									}}
+								>
+									<Text style={styles.categoryOptionText}>{category.name}</Text>
+								</TouchableOpacity>
+							))
+						)}
+
+						<TouchableOpacity
+							style={[styles.modalButton, styles.cancelButton]}
+							onPress={() => {
+								setShowCategorySelector(false);
+								setSelectedProductForCategory(null);
+							}}
+						>
+							<Text style={styles.modalButtonTextCancel}>Cancelar</Text>
+						</TouchableOpacity>
+					</View>
+				</View>
 			</Modal>
+
+			{/* Modal de Produto */}
+			<CustomProductModal
+				visible={modalVisible}
+				product={editingProduct}
+				onSave={(product) => {
+					if (editingProduct) {
+						updateProduct(editingProduct.id, product);
+					} else {
+						addProduct(product);
+					}
+					setModalVisible(false);
+					setEditingProduct(null);
+				}}
+				onCancel={() => {
+					setModalVisible(false);
+					setEditingProduct(null);
+				}}
+				categories={categories}
+				onCategorySelect={() => setShowCategorySelector(true)}
+				selectedCategoryId={selectedCategoryId}
+			/>
 			<CustomAlert
 				visible={alertVisible}
 				title={alertConfig.title}
@@ -547,7 +506,7 @@ const styles = StyleSheet.create({
 	},
 	addButton: {
 		backgroundColor: COLORS.textSecondary,
-		paddingHorizontal: 15,
+		paddingHorizontal: 10,
 		paddingVertical: 10,
 		borderRadius: 20,
 	},
@@ -558,12 +517,12 @@ const styles = StyleSheet.create({
 	content: {
 		flex: 1,
 		padding: 20,
-		marginBottom: 40
+		marginBottom: 0
 	},
 	productCard: {
 		backgroundColor: '#FFF',
 		padding: 15,
-		marginBottom: 25,
+		marginBottom: 5,
 		borderRadius: 10,
 		elevation: 2,
 		flexDirection: 'row',
@@ -608,13 +567,13 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 	},
 	editButton: {
-		backgroundColor: '#4CAF50',
+		backgroundColor: COLORS.background//'#4CAF50',
 	},
 	toggleButton: {
-		backgroundColor: '#2196f3',
+		backgroundColor: COLORS.background//'#2196f3',
 	},
 	deleteButton: {
-		backgroundColor: '#FF5252',
+		backgroundColor: COLORS.background//'#FF5252',
 	},
 	actionButtonText: {
 		fontSize: 16,
@@ -854,17 +813,107 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'center',
-		backgroundColor: COLORS.primary,
+		backgroundColor: COLORS.background,
 		padding: 15,
 		borderRadius: 10,
-		marginBottom: 5,
+		marginBottom: 0,
+		elevation: 2,
 	},
 	categoryName: {
 		fontSize: 18,
 		fontWeight: 'bold',
-		color: COLORS.background,
+		color: COLORS.text,
 	},
 	productsList: {
 		paddingLeft: 10,
+	},
+	sectionContainer: {
+		marginBottom: 30,
+		paddingTop: 5,
+	},
+	sectionHeader: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		marginBottom: 15,
+	},
+	sectionTitle: {
+		fontSize: 20,
+		fontWeight: 'bold',
+		color: COLORS.text,
+	},
+	addCategoryButton: {
+		backgroundColor: COLORS.primary,
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	emptyContainer: {
+		alignItems: 'center',
+		padding: 30,
+		backgroundColor: '#f5f5f5',
+		borderRadius: 10,
+	},
+	emptyText: {
+		fontSize: 16,
+		color: COLORS.text,
+		marginBottom: 5,
+	},
+	emptySubtext: {
+		fontSize: 14,
+		color: '#666',
+		textAlign: 'center',
+	},
+	categoryCard: {
+		backgroundColor: '#FFF',
+		padding: 15,
+		marginBottom: 10,
+		borderRadius: 10,
+		elevation: 2,
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+	},
+	categoryInfo: {
+		flex: 1,
+	},
+	categoryCardName: {
+		fontSize: 16,
+		fontWeight: 'bold',
+		color: COLORS.text,
+	},
+	categoryDate: {
+		fontSize: 12,
+		color: '#666',
+		marginTop: 2,
+	},
+	categoryActions: {
+		flexDirection: 'row',
+		gap: 10,
+	},
+	categorySelector: {
+		borderWidth: 1,
+		borderColor: '#ddd',
+		borderRadius: 8,
+		padding: 12,
+		backgroundColor: '#fff',
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+	},
+	categorySelectorText: {
+		fontSize: 16,
+		color: COLORS.text,
+	},
+	categoryOption: {
+		padding: 15,
+		borderBottomWidth: 1,
+		borderBottomColor: '#eee',
+	},
+	categoryOptionText: {
+		fontSize: 16,
+		color: COLORS.text,
 	},
 });

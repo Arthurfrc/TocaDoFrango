@@ -6,6 +6,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-nati
 import { COLORS } from "@/constants/colors";
 import { useMenu } from "@/context/MenuContext";
 import { useCart } from "@/context/CartContext";
+import { getCategoryName } from "@/utils";
 import { MaterialIcons } from "@expo/vector-icons";
 import CustomAlert from "@/components/CustomAlert";
 
@@ -13,14 +14,15 @@ export default function MenuScreen({ navigation }: any) {
     const { cart, addToCart } = useCart();
     const [alertVisible, setAlertVisible] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ title: '', message: '' });
-    const { products } = useMenu();
+    const { products, categories } = useMenu();
     const menuByCategory = products
         .filter(product => product.available)
         .reduce((acc, product) => {
-            if (!acc[product.category]) {
-                acc[product.category] = [];
+            const categoryName = getCategoryName(product, categories);
+            if (!acc[categoryName]) {
+                acc[categoryName] = [];
             }
-            acc[product.category].push(product);
+            acc[categoryName].push(product);
             return acc;
         }, {} as { [key: string]: typeof products });
 
