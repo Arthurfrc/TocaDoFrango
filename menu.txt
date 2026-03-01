@@ -1,0 +1,22 @@
+=== CATEGORIA: CARNE ===
+Bife Assado -   R$ 15.00    -   Estoque: 10
+Cupim pesa  -   R$ 55.00    -   Estoque: 10
+
+=== CATEGORIA: ACOMPANHAMENTOS ===
+Batata Frita     -   R$ 12.00    -   Estoque: 18
+Farofa Especial  -   R$ 3.00
+Salada de Alface -   R$ 6.00
+Salada Especial  -   R$ 3.00
+
+=== CATEGORIA: FRANGOS ===
+Frango Assado Inteiro  -    R$ 30.00
+
+=== CATEGORIA: REFRIGERANTES ===
+COCA COLA 1L - R$ 9.99
+COCA COLA 2L - R$ 12.00
+GUARANÁ 1L - R$ 8.00
+GUARANÁ 2L - R$ 12.00
+
+=== CATEGORIA: SUCOS ===
+Suco de caja     -  R$ 8.00
+Suco de Acerola  -  R$ 8.00
