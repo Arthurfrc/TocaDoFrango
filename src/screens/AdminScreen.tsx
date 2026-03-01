@@ -58,6 +58,7 @@ export default function AdminScreen({ navigation }: any) {
 	const [categoryName, setCategoryName] = useState('');
 	const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
+	const [categoriesExpanded, setCategoriesExpanded] = useState(true);
 	const [showCategorySelector, setShowCategorySelector] = useState(false);
 	const [selectedProductForCategory, setSelectedProductForCategory] = useState<Product | null>(null);
 	const [selectedCategoryId, setSelectedCategoryId] = useState('');
@@ -169,15 +170,26 @@ export default function AdminScreen({ navigation }: any) {
 			<ScrollView style={[styles.content, { maxHeight: 250 }]}>
 				{/* Seção de Categorias */}
 				<View style={styles.sectionContainer}>
-					<View style={styles.sectionHeader}>
-						<Text style={styles.sectionTitle}>📂 Categorias</Text>
+					<TouchableOpacity
+						style={styles.sectionHeader}
+						onPress={() => setCategoriesExpanded(!categoriesExpanded)}
+					>
+						<View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+							<FontAwesome5
+								name={categoriesExpanded ? "chevron-down" : "chevron-right"}
+								size={16}
+								color={COLORS.text}
+								style={{ marginRight: 10 }}
+							/>
+							<Text style={styles.sectionTitle}>📂 Categorias</Text>
+						</View>
 						<TouchableOpacity
 							style={styles.addCategoryButton}
 							onPress={() => setShowCategoryModal(true)}
 						>
 							<FontAwesome5 name="plus" size={16} color={COLORS.background} />
 						</TouchableOpacity>
-					</View>
+					</TouchableOpacity>
 
 					{categories.length === 0 ? (
 						<View style={styles.emptyContainer}>

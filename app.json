@@ -6,11 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "statusBar": {
-      "backgroundColor": "#FFFFFF",
-      "style": "dark",
-      "translucent": false
-    },
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -27,7 +22,12 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FFFFFF",
+        "translucent": false
+      },
+      "statusBar": {
+        "backgroundColor": "#FFFFFF",
+        "style": "dark"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -37,7 +37,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "@react-native-firebase/auth"
+      "@react-native-firebase/auth",
+      "expo-font"
     ],
     "extra": {
       "eas": {

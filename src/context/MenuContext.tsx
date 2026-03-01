@@ -29,8 +29,8 @@ interface MenuContextType {
 const MenuContext = createContext<MenuContextType | undefined>(undefined);
 
 export function MenuProvider({ children }: { children: ReactNode }) {
-    const [products, setProducts] = useState<Product[]>();
-    const [categories, setCategories] = useState<Category[]>();
+    const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
