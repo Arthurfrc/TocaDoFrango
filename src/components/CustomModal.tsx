@@ -17,14 +17,14 @@ interface Option {
     onPress: () => void;
 }
 
-interface OptionsModalProps {
+interface CustomModalProps {
     visible: boolean;
     title: string;
     options: Option[];
     onClose: () => void;
 }
 
-export default function OptionsModal({ visible, title, options, onClose }: OptionsModalProps) {
+export default function CustomModal({ visible, title, options, onClose }: CustomModalProps) {
     return (
         <Modal
             visible={visible}
