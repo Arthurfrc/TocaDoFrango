@@ -23,19 +23,7 @@ import { COLORS } from '@/constants/colors';
 import { useMenu } from '@/context/MenuContext';
 import { useCart } from '@/context/CartContext';
 
-type RootStackParamList = {
-    Cart: undefined;
-    Menu: undefined;
-}
-
-type CartScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Cart'>;
-type CartScreenRouteProp = RouteProp<RootStackParamList, 'Cart'>;
-
-export default function CartScreen({ route, navigation }:
-    {
-        route: CartScreenRouteProp;
-        navigation: CartScreenNavigationProp
-    }) {
+export default function CartScreen({ navigation }: any) {
     const [showPaymentOptions, setShowPaymentOptions] = useState(false);
     const [showDeliveryOptions, setShowDeliveryOptions] = useState(false);
 

@@ -63,6 +63,8 @@ export default function AdminScreen({ navigation }: any) {
 	const [selectedProductForCategory, setSelectedProductForCategory] = useState<Product | null>(null);
 	const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
+	const [showSettingsModal, setShowSettingsModal] = useState(false);
+
 	// Estados para expansão
 	const [categoriesExpanded, setCategoriesExpanded] = useState(true);
 	const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
@@ -111,6 +113,19 @@ export default function AdminScreen({ navigation }: any) {
 			'Cancelar'
 		);
 	};
+
+	const settingsOptions = [
+		{
+			id: 'privacy',
+			title: '📄 Política de Privacidade',
+			onPress: () => navigation.navigate('PrivacyPolicy')
+		},
+		{
+			id: 'terms',
+			title: '📋 Termos de Serviço',
+			onPress: () => navigation.navigate('TermsOfService')
+		}
+	];
 
 	const handleDeleteCategory = (categoryId: string) => {
 		const categoryProducts = products.filter(p => p.categoryId === categoryId);
@@ -186,10 +201,10 @@ export default function AdminScreen({ navigation }: any) {
 				</View>
 				<View style={styles.headerRight}>
 					<TouchableOpacity
-						style={[styles.actionButton, styles.cleanupButton]}
-						onPress={handleCleanup}
+						style={[styles.actionButton, styles.settingsButton]}
+						onPress={() => setShowSettingsModal(true)}
 					>
-						<FontAwesome5 name="broom" size={16} color={COLORS.background} />
+						<FontAwesome5 name="cog" size={16} color={COLORS.background} />
 					</TouchableOpacity>
 				</View>
 			</View>
@@ -490,6 +505,13 @@ export default function AdminScreen({ navigation }: any) {
 				confirmText={alertConfig.confirmText}
 				cancelText={alertConfig.cancelText}
 			/>
+
+			<CustomModal
+				visible={showSettingsModal}
+				title="⚙️ Configurações"
+				options={settingsOptions}
+				onClose={() => setShowSettingsModal(false)}
+			/>
 		</View>
 	);
 }
@@ -566,8 +588,8 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 	},
-	cleanupButton: {
-		backgroundColor: '#FF6B6B',
+	settingsButton: {
+		backgroundColor: '#4A90E2',
 	},
 	publishButton: {
 		backgroundColor: '#4CAF50',
