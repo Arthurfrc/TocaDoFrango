@@ -61,24 +61,6 @@ export default function HomeScreen({ navigation }: any) {
         if (newCount >= 3) {
             setShowPasswordModal(true);
             setLogoPress(0);
-            // try {
-            //     const deviceId = await Application.getAndroidId();
-            //     console.log('🔍 Verificando dispositivo:', deviceId);
-
-            //     if (deviceId === ADMIN_DEVICE) {
-            //         console.log('✅ Acesso autorizado! Desbloqueando admin...');
-            //         setAdminUnlocked(true);
-            //         Alert.alert('✅ Admin Desbloqueado', 'Botão de configurações ativado!');
-            //     } else {
-            //         console.log('❌ Dispositivo não autorizado');
-            //         Alert.alert('Acesso Negado', 'Dispositivo não autorizado');
-            //         setLogoPress(0);
-            //     }
-            // } catch (error) {
-            //     console.error('❌ Erro ao verificar:', error);
-            //     Alert.alert('Erro', 'Não foi possível verificar o dispositivo');
-            //     setLogoPress(0);
-            // }
         } else {
             // Reseta contador após 5 segundos
             resetTimerRef.current = setTimeout(() => {
@@ -162,6 +144,28 @@ export default function HomeScreen({ navigation }: any) {
                 <Text style={styles.sectionTitle}>📞 Contato</Text>
                 <Text style={styles.infoText}>(84) 98822-2025</Text>
             </View>
+            <View style={styles.quickActions}>
+                <TouchableOpacity
+                    style={[styles.button, styles.privacyButton]}
+                    onPress={() => {
+                        console.log('🚀 Navegando para Políticas de Privacidade');
+                        navigation.navigate('PrivacyPolicy');
+                    }}
+                >
+                    <MaterialIcons name="security" size={24} color="white" />
+                    <Text style={styles.buttonText}>Políticas de Privacidade</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.button, styles.termsButton]}
+                    onPress={() => {
+                        console.log('🚀 Navegando para Termos de Uso');
+                        navigation.navigate('TermsOfService');
+                    }}
+                >
+                    <MaterialIcons name="description" size={24} color="white" />
+                    <Text style={styles.buttonText}>Termos de Uso</Text>
+                </TouchableOpacity>
+            </View>
             <InputAlert
                 visible={showPasswordModal}
                 title="🔐 Acesso Admin"
@@ -230,6 +234,20 @@ const styles = StyleSheet.create({
     },
     cartButton: {
         backgroundColor: COLORS.textSecondary,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 15
+    },
+    termsButton: {
+        backgroundColor: COLORS.terms,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 15
+    },
+    privacyButton: {
+        backgroundColor: COLORS.privacy,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
