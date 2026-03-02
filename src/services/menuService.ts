@@ -31,12 +31,38 @@ export const menuService = {
     },
 
     async getMenu(): Promise<Product[]> {
-        const querySnapshot = await getDocs(collection(db, MENU_COLLECTION));
-        return querySnapshot.docs.map(doc => doc.data() as Product);
+        // Tenta buscar da coleção 'menu' primeiro (nova)
+        try {
+            const menuSnapshot = await getDocs(collection(db, MENU_COLLECTION));
+            if (!menuSnapshot.empty) {
+                return menuSnapshot.docs.map(doc => doc.data() as Product);
+            }
+        } catch (error) {
+            console.log('Buscando da coleção alternativa...');
+        }
+        
+        // Se não encontrar, busca da coleção 'products' (legada)
+        const productsSnapshot = await getDocs(collection(db, PRODUCT_COLLECTION));
+        return productsSnapshot.docs.map(doc => doc.data() as Product);
     },
 
     async updateProductStock(productId: string, newStock: number): Promise<void> {
         await productsService.updateProduct(productId, { stock: newStock });
+    },
+
+    // Função temporária para limpar coleções antigas
+    async cleanupOldCollections(): Promise<void> {
+        console.log(' Limpando coleções antigas...');
+        
+        // Limpar coleção 'products' antiga
+        const productsSnapshot = await getDocs(collection(db, PRODUCT_COLLECTION));
+        const batch = writeBatch(db);
+        productsSnapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+        
+        console.log('');
     }
 };
 
