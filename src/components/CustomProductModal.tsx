@@ -71,6 +71,16 @@ export default function CustomProductModal({
         };
 
         onSave(newProduct);
+        
+        // Limpar formulário após salvar
+        setFormData({
+            name: '',
+            description: '',
+            price: '',
+            categoryId: '',
+            hasStockControl: false,
+            stock: '0',
+        });
     };
 
     useEffect(() => {

@@ -31,7 +31,8 @@ export const menuService = {
     },
 
     async getMenu(): Promise<Product[]> {
-        return await productsService.getProducts();
+        const querySnapshot = await getDocs(collection(db, MENU_COLLECTION));
+        return querySnapshot.docs.map(doc => doc.data() as Product);
     },
 
     async updateProductStock(productId: string, newStock: number): Promise<void> {

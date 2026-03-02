@@ -41,6 +41,7 @@ export default function AdminScreen({ navigation }: any) {
 		updateCategory,
 		deleteCategory
 	} = useMenu();
+
 	const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 	const [modalVisible, setModalVisible] = useState(false);
 	const [alertVisible, setAlertVisible] = useState(false);
@@ -53,19 +54,21 @@ export default function AdminScreen({ navigation }: any) {
 		cancelText: undefined as string | undefined,
 	});
 
-	const [showOptionsModal, setShowOptionsModal] = useState(false);
 	const [showCategoryModal, setShowCategoryModal] = useState(false);
 	const [categoryName, setCategoryName] = useState('');
 	const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
-	const [categoriesExpanded, setCategoriesExpanded] = useState(true);
 	const [showCategorySelector, setShowCategorySelector] = useState(false);
 	const [selectedProductForCategory, setSelectedProductForCategory] = useState<Product | null>(null);
 	const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
-	const openEditModal = (product?: Product) => {
+	// Estados para expansão
+	const [categoriesExpanded, setCategoriesExpanded] = useState(true);
+	const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+	const openEditModal = (product?: Product, categoryId?: string) => {
 		setEditingProduct(product || null);
-		setSelectedCategoryId(product?.categoryId || '');
+		setSelectedCategoryId(product?.categoryId || categoryId || '');
 		setModalVisible(true);
 	};
 
@@ -101,23 +104,44 @@ export default function AdminScreen({ navigation }: any) {
 			'Tem certeza que deseja excluir este produto?',
 			() => {
 				deleteProduct(productId);
-				// Não precisa de alert aqui, a ação já foi executada
 			},
-			() => { }, // Só fecha
+			() => { },
 			'Confirmar',
 			'Cancelar'
 		);
 	};
 
-	// Agrupar produtos por categoria
-	const groupedProducts = products.reduce((acc, product) => {
-		const category = getCategoryName(product, categories);
-		if (!acc[category]) acc[category] = [];
-		acc[category].push(product);
-		return acc;
-	}, {} as Record<string, Product[]>);
+	const handleDeleteCategory = (categoryId: string) => {
+		const categoryProducts = products.filter(p => p.categoryId === categoryId);
 
-	const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+		showAlert(
+			'🗑️ Confirmar Exclusão',
+			categoryProducts.length > 0
+				? `Atenção! Esta categoria contém ${categoryProducts.length} produto(s). Todos serão excluídos. Deseja continuar?`
+				: 'Tem certeza que deseja excluir esta categoria?',
+			() => {
+				// Excluir todos os produtos da categoria primeiro
+				categoryProducts.forEach(product => {
+					deleteProduct(product.id);
+				});
+				// Depois excluir a categoria
+				deleteCategory(categoryId);
+			},
+			() => { },
+			'Confirmar',
+			'Cancelar'
+		);
+	};
+
+	const toggleCategoryExpansion = (categoryId: string) => {
+		const newExpanded = new Set(expandedCategories);
+		if (newExpanded.has(categoryId)) {
+			newExpanded.delete(categoryId);
+		} else {
+			newExpanded.add(categoryId);
+		}
+		setExpandedCategories(newExpanded);
+	};
 
 	if (isLoading) {
 		return (
@@ -167,8 +191,8 @@ export default function AdminScreen({ navigation }: any) {
 				</View>
 			)}
 
-			<ScrollView style={[styles.content, { maxHeight: 250 }]}>
-				{/* Seção de Categorias */}
+			<ScrollView style={styles.content}>
+				{/* Header Principal de Categorias */}
 				<View style={styles.sectionContainer}>
 					<TouchableOpacity
 						style={styles.sectionHeader}
@@ -191,189 +215,135 @@ export default function AdminScreen({ navigation }: any) {
 						</TouchableOpacity>
 					</TouchableOpacity>
 
-					{categories.length === 0 ? (
-						<View style={styles.emptyContainer}>
-							<Text style={styles.emptyText}>Nenhuma categoria cadastrada</Text>
-							<Text style={styles.emptySubtext}>Adicione categorias para organizar seus produtos</Text>
-						</View>
-					) : (
-						categories.map((category) => (
-							<View key={category.id} style={styles.categoryCard}>
-								<View style={styles.categoryInfo}>
-									<Text style={styles.categoryName}>{category.name}</Text>
-									<Text style={styles.categoryDate}>
-										Criada em {
-											(category.createdAt as any)?.toDate?.()?.toLocaleDateString('pt-BR') ||
-											(category.createdAt ? new Date(category.createdAt).toLocaleDateString('pt-BR') : 'Data não disponível')
-										}
-									</Text>
+					{/* Categorias com Produtos Aninhados */}
+					{categoriesExpanded && (
+						<>
+							{categories.length === 0 ? (
+								<View style={styles.emptyContainer}>
+									<Text style={styles.emptyText}>Nenhuma categoria cadastrada</Text>
+									<Text style={styles.emptySubtext}>Adicione categorias para organizar seus produtos</Text>
 								</View>
-								<View style={styles.categoryActions}>
-									<TouchableOpacity
-										style={styles.editButton}
-										onPress={() => {
-											setEditingCategory(category);
-											setCategoryName(category.name);
-											setShowCategoryModal(true);
-										}}
-									>
-										<FontAwesome5 name="edit" size={16} color={COLORS.primary} />
-									</TouchableOpacity>
-									<TouchableOpacity
-										style={styles.deleteButton}
-										onPress={() => {
-											Alert.alert(
-												'Confirmar Exclusão',
-												`Deseja excluir a categoria "${category.name}"?`,
-												[
-													{ text: 'Cancelar', style: 'cancel' },
-													{
-														text: 'Excluir',
-														style: 'destructive',
-														onPress: () => deleteCategory(category.id),
-													},
-												]
-											);
-										}}
-									>
-										<FontAwesome5 name="trash" size={16} color="#FF5252" />
-									</TouchableOpacity>
-								</View>
-							</View>
-						))
-					)}
-				</View>
-			</ScrollView>
+							) : (
+								categories.map((category) => {
+									const categoryProducts = products.filter(p => p.categoryId === category.id);
+									const isExpanded = expandedCategories.has(category.id);
 
-			{/* Seção de Produtos */}
-
-			<ScrollView style={[styles.content, { marginBottom: 40, borderTopWidth: 1, borderTopColor: COLORS.text, borderStyle: 'solid', marginTop: 5 }]}>
-				<View style={styles.sectionContainer}>
-					<View style={styles.sectionHeader}>
-						<Text style={styles.sectionTitle}>🍔 Produtos</Text>
-						<TouchableOpacity
-							style={styles.addCategoryButton}
-							onPress={() => openEditModal()}
-						>
-							<FontAwesome5 name="plus" size={16} color={COLORS.background} />
-						</TouchableOpacity>
-					</View>
-					{products.length === 0 ? (
-						<View style={styles.emptyContainer}>
-							<FontAwesome5 name="box-open" size={48} color={COLORS.primary} />
-							<Text style={styles.emptyText}>
-								Nenhum produto cadastrado. Adicione produtos para começar!
-							</Text>
-						</View>
-					) :
-
-						(Object.entries(groupedProducts)
-							.sort(([a], [b]) => a.localeCompare(b))
-							.map(([category, categoryProducts]) => {
-								const isExpanded = expandedCategories.has(category);
-								const sortedProducts = categoryProducts.sort((a, b) => a.name.localeCompare(b.name));
-
-								return (
-									<View key={category} style={styles.categoryContainer}>
-										<TouchableOpacity
-											style={[styles.categoryHeader, isExpanded && { marginBottom: 5 }]}
-											onPress={() => {
-												const newExpanded = new Set(expandedCategories);
-												if (isExpanded) {
-													newExpanded.delete(category);
-												} else {
-													newExpanded.add(category);
-												}
-												setExpandedCategories(newExpanded);
-											}}
-										>
-											<Text style={styles.categoryCardName}>{category}</Text>
-											<FontAwesome5
-												name={isExpanded ? "chevron-down" : "chevron-right"}
-												size={16}
-												color={COLORS.text}
-											/>
-										</TouchableOpacity>
-
-										{isExpanded && (
-											<View style={styles.productsList}>
-												{sortedProducts.map(product => (
-													<View key={product.id} style={styles.productCard}>
-														<View style={styles.productInfo}>
-															<Text style={styles.productName}>{product.name}</Text>
-															<Text style={styles.productDescription}>{product.description}</Text>
-															<Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
-															{product.hasStockControl && (
-																<Text style={styles.stockInfo}>
-																	Estoque: {product.stock || 0} unidades
-																</Text>
-															)}
-															<View style={styles.statusContainer}>
-																<Text style={styles.statusText}>
-																	Status: {product.available ? '✅ Disponível' : '❌ Indisponível'}
-																</Text>
-															</View>
-														</View>
-
-														<View style={styles.actions}>
+									return (
+										<View key={category.id} style={styles.categoryContainer}>
+											{/* Header da Categoria */}
+											<TouchableOpacity
+												style={styles.categoryHeader}
+												onPress={() => toggleCategoryExpansion(category.id)}
+											>
+												<View style={styles.categoryContent}>
+													<View style={styles.categoryNameRow}>
+														<FontAwesome5
+															name={isExpanded ? "chevron-down" : "chevron-right"}
+															size={16}
+															color={COLORS.text}
+															style={{ marginRight: 10 }}
+														/>
+														<Text style={styles.categoryName}>{category.name}</Text>
+													</View>
+													<View style={styles.categoryActionsRow}>
+														<Text style={styles.categoryCount}>
+															({categoryProducts.length} produtos)
+														</Text>
+														<View style={styles.categoryActions}>
 															<TouchableOpacity
-																style={[styles.actionButton, styles.editButton]}
-																onPress={() => openEditModal(product)}
+																style={styles.actionButton}
+																onPress={() => {
+																	setEditingCategory(category);
+																	setCategoryName(category.name);
+																	setShowCategoryModal(true);
+																}}
 															>
-																<FontAwesome5 name="edit" size={16} color="black" />
+																<FontAwesome5 name="edit" size={16} color={COLORS.primary} />
 															</TouchableOpacity>
 
 															<TouchableOpacity
-																style={[styles.actionButton, styles.toggleButton]}
-																onPress={() => toggleProductAvailability(product.id)}
+																style={styles.actionButton}
+																onPress={() => handleDeleteCategory(category.id)}
 															>
-																<FontAwesome5
-																	name={product.available ? "eye-slash" : "eye"}
-																	size={16}
-																	color="black"
-																/>
+																<FontAwesome5 name="trash" size={16} color="#FF5252" />
 															</TouchableOpacity>
 
 															<TouchableOpacity
-																style={[styles.actionButton, styles.deleteButton]}
-																onPress={() => handleDeleteProduct(product.id)}
+																style={styles.actionButton}
+																onPress={() => openEditModal(undefined, category.id)}
 															>
-																<FontAwesome5 name="trash" size={16} color="black" />
+																<FontAwesome5 name="plus" size={16} color={COLORS.primary} />
 															</TouchableOpacity>
 														</View>
 													</View>
-												))}
-											</View>
-										)}
-									</View>
-								);
-							})
-						)}
+												</View>
+											</TouchableOpacity>
+
+											{/* Produtos da Categoria (se expandido) */}
+											{isExpanded && (
+												<View style={styles.productsList}>
+													{categoryProducts.length === 0 ? (
+														<View style={styles.emptySubContainer}>
+															<Text style={styles.emptySubtext}>Nenhum produto nesta categoria</Text>
+														</View>
+													) : (
+														categoryProducts.map(product => (
+															<View key={product.id} style={styles.productCard}>
+																<View style={styles.productInfo}>
+																	<Text style={styles.productName}>{product.name}</Text>
+																	<Text style={styles.productDescription}>{product.description}</Text>
+																	<Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
+																	{product.hasStockControl && (
+																		<Text style={styles.stockInfo}>
+																			Estoque: {product.stock || 0} unidades
+																		</Text>
+																	)}
+																	<View style={styles.statusContainer}>
+																		<Text style={styles.statusText}>
+																			Status: {product.available ? '✅ Disponível' : '❌ Indisponível'}
+																		</Text>
+																	</View>
+																</View>
+
+																<View style={styles.actions}>
+																	<TouchableOpacity
+																		style={[styles.actionButton, styles.editButton]}
+																		onPress={() => openEditModal(product)}
+																	>
+																		<FontAwesome5 name="edit" size={16} color="black" />
+																	</TouchableOpacity>
+
+																	<TouchableOpacity
+																		style={[styles.actionButton, styles.toggleButton]}
+																		onPress={() => toggleProductAvailability(product.id)}
+																	>
+																		<FontAwesome5
+																			name={product.available ? "eye-slash" : "eye"}
+																			size={16}
+																			color="black"
+																		/>
+																	</TouchableOpacity>
+
+																	<TouchableOpacity
+																		style={[styles.actionButton, styles.deleteButton]}
+																		onPress={() => handleDeleteProduct(product.id)}
+																	>
+																		<FontAwesome5 name="trash" size={16} color="black" />
+																	</TouchableOpacity>
+																</View>
+															</View>
+														))
+													)}
+												</View>
+											)}
+										</View>
+									);
+								})
+							)}
+						</>
+					)}
 				</View>
 			</ScrollView>
-
-			{/* Modal de opções */}
-			<CustomModal
-				visible={showOptionsModal}
-				title="O que você deseja adicionar?"
-				options={[
-					{
-						id: 'product',
-						title: 'Novo Produto',
-						icon: '🍔',
-						onPress: () => openEditModal(),
-					},
-					{
-						id: 'category',
-						title: 'Nova Categoria',
-						icon: '📂',
-						onPress: () => {
-							setShowCategoryModal(true);
-						},
-					},
-				]}
-				onClose={() => setShowOptionsModal(false)}
-			/>
 
 			{/* Modal de Nova Categoria */}
 			<CustomFormModal
@@ -390,7 +360,6 @@ export default function AdminScreen({ navigation }: any) {
 					}
 
 					if (editingCategory) {
-						// Editando categoria existente
 						const updatedCategory: Category = {
 							...editingCategory,
 							name: categoryName.trim(),
@@ -398,7 +367,6 @@ export default function AdminScreen({ navigation }: any) {
 						};
 						updateCategory(editingCategory.id, updatedCategory);
 					} else {
-						// Criando nova categoria
 						const newCategory: Category = {
 							id: Date.now().toString(),
 							name: categoryName.trim(),
@@ -516,137 +484,15 @@ const styles = StyleSheet.create({
 		fontWeight: 'bold',
 		color: COLORS.background,
 	},
-	addButton: {
-		backgroundColor: COLORS.textSecondary,
-		paddingHorizontal: 10,
-		paddingVertical: 10,
-		borderRadius: 20,
-	},
-	addButtonText: {
-		color: COLORS.background,
-		fontWeight: 'bold',
-	},
 	content: {
 		flex: 1,
 		padding: 20,
-		marginBottom: 0
 	},
-	productCard: {
-		backgroundColor: '#FFF',
-		padding: 15,
-		marginBottom: 5,
-		borderRadius: 10,
-		elevation: 2,
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-	},
-	productInfo: {
+	loading: {
 		flex: 1,
-	},
-	productName: {
-		fontSize: 18,
-		fontWeight: 'bold',
-		color: COLORS.text,
-		marginBottom: 5,
-	},
-	productDescription: {
-		fontSize: 14,
-		color: '#666',
-		marginBottom: 5,
-	},
-	productPrice: {
-		fontSize: 16,
-		fontWeight: 'bold',
-		color: COLORS.primary,
-		marginBottom: 5,
-	},
-	statusContainer: {
-		marginTop: 5,
-	},
-	statusText: {
-		fontSize: 12,
-		color: COLORS.text,
-	},
-	actions: {
-		flexDirection: 'column',
-		gap: 5,
-	},
-	actionButton: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
 		justifyContent: 'center',
 		alignItems: 'center',
-	},
-	editButton: {
-		backgroundColor: COLORS.background//'#4CAF50',
-	},
-	toggleButton: {
-		backgroundColor: COLORS.background//'#2196f3',
-	},
-	deleteButton: {
-		backgroundColor: COLORS.background//'#FF5252',
-	},
-	actionButtonText: {
-		fontSize: 16,
-	},
-	modalOverlay: {
-		flex: 1,
-		backgroundColor: 'rgba(0,0,0,0.5)',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-	modalContent: {
 		backgroundColor: COLORS.background,
-		paddingHorizontal: 30,
-		paddingVertical: 20,
-		borderRadius: 20,
-		width: '90%',
-		maxHeight: '80%',
-	},
-	modalTitle: {
-		fontSize: 20,
-		fontWeight: 'bold',
-		color: COLORS.primary,
-		marginBottom: 20,
-		textAlign: 'center',
-	},
-	input: {
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		borderRadius: 10,
-		padding: 15,
-		marginBottom: 15,
-		fontSize: 16,
-	},
-	textArea: {
-		height: 80,
-		textAlignVertical: 'top',
-	},
-	modalActions: {
-		flexDirection: 'row',
-		gap: 10,
-		marginTop: 20,
-	},
-	modalButton: {
-		flex: 1,
-		padding: 15,
-		borderRadius: 10,
-		alignItems: 'center',
-	},
-	cancelButton: {
-		backgroundColor: '#E0E0E0',
-	},
-	saveButton: {
-		backgroundColor: COLORS.primary,
-	},
-	modalButtonTextConfirm: {
-		fontWeight: 'bold',
-		color: COLORS.background,
-	},
-	modalButtonTextCancel: {
-		fontWeight: 'bold',
-		color: COLORS.text,
 	},
 	actionBar: {
 		backgroundColor: 'rgba(0,0,0,0.05)',
@@ -673,10 +519,6 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		fontWeight: 'bold',
 	},
-	addButtonContainer: {
-		paddingHorizontal: 20,
-		paddingBottom: 10,
-	},
 	headerLeft: {
 		flexDirection: 'row',
 		alignItems: 'center',
@@ -693,30 +535,6 @@ const styles = StyleSheet.create({
 	headerTitle: {
 		gap: 2,
 	},
-	unsavedIndicator: {
-		fontSize: 12,
-		color: 'rgba(255,255,255,0.8)',
-		fontStyle: 'italic',
-	},
-	headerRight: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 10,
-	},
-	headerButton: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 5,
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		borderRadius: 20,
-		backgroundColor: 'rgba(255,255,255,0.2)',
-	},
-	headerButtonText: {
-		color: COLORS.background,
-		fontSize: 12,
-		fontWeight: 'bold',
-	},
 	publishButton: {
 		backgroundColor: '#4CAF50',
 	},
@@ -725,119 +543,6 @@ const styles = StyleSheet.create({
 	},
 	discardButton: {
 		backgroundColor: '#FF9800',
-	},
-	uidButton: {
-		backgroundColor: '#FF6B6B',
-		padding: 15,
-		borderRadius: 8,
-		alignItems: 'center',
-		margin: 20,
-		marginBottom: 30,
-	},
-	uidButtonText: {
-		color: '#FFF',
-		fontSize: 16,
-		fontWeight: 'bold',
-	},
-	loading: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
-		backgroundColor: COLORS.background,
-	},
-	// Adicionar ao StyleSheet existente
-	inputGroup: {
-		marginBottom: 0,
-	},
-	inputLabel: {
-		fontSize: 14,
-		fontWeight: 'bold',
-		color: COLORS.text,
-		marginBottom: 8,
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 8,
-	},
-	priceContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		// borderWidth: 1,
-		// borderColor: COLORS.border,
-		// borderRadius: 10,
-		backgroundColor: COLORS.background,
-	},
-	pricePrefix: {
-		fontSize: 32,
-		fontWeight: 'bold',
-		color: COLORS.primary,
-		marginRight: 8
-	},
-	priceInput: {
-		flex: 1,
-		fontSize: 42,
-		fontWeight: 'bold',
-		color: COLORS.text,
-	},
-	checkboxContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		marginBottom: 15,
-	},
-	checkbox: {
-		marginRight: 10,
-	},
-	checkboxLabel: {
-		fontSize: 16,
-		color: COLORS.text,
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 8,
-	},
-	stockInfo: {
-		fontSize: 12,
-		color: '#666',
-		fontStyle: 'italic',
-		marginTop: 2,
-	},
-	stockInputContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 10,
-	},
-	stockInput: {
-		flex: 1,
-		textAlign: 'center',
-	},
-	stockButton: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		backgroundColor: COLORS.background,
-		borderWidth: 1,
-		borderColor: COLORS.primary,
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-	categoryContainer: {
-		marginBottom: 15,
-	},
-	categoryHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		backgroundColor: COLORS.background,
-		padding: 15,
-		borderRadius: 10,
-		marginBottom: 0,
-		elevation: 2,
-	},
-	categoryName: {
-		fontSize: 18,
-		fontWeight: 'bold',
-		color: COLORS.text,
-	},
-	productsList: {
-		paddingLeft: 10,
 	},
 	sectionContainer: {
 		marginBottom: 30,
@@ -878,45 +583,139 @@ const styles = StyleSheet.create({
 		color: '#666',
 		textAlign: 'center',
 	},
-	categoryCard: {
+	emptySubContainer: {
+		alignItems: 'center',
+		padding: 20,
+		backgroundColor: '#f9f9f9',
+		borderRadius: 8,
+		marginLeft: 20,
+		marginTop: 5,
+	},
+	categoryContainer: {
+		marginBottom: 15,
+	},
+	categoryHeader: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
 		backgroundColor: '#FFF',
 		padding: 15,
-		marginBottom: 10,
+		borderRadius: 10,
+		marginBottom: 5,
+		elevation: 2,
+	},
+	categoryName: {
+		fontSize: 18,
+		fontWeight: 'bold',
+		color: COLORS.text,
+	},
+	categoryCount: {
+		fontSize: 12,
+		color: '#666',
+		marginLeft: 8,
+	},
+	categoryActions: {
+		flexDirection: 'row',
+		gap: 8,
+	},
+	actionButton: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		backgroundColor: '#f5f5f5',
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	productsList: {
+		paddingLeft: 20,
+	},
+	productCard: {
+		backgroundColor: '#FFF',
+		padding: 15,
+		marginBottom: 5,
 		borderRadius: 10,
 		elevation: 2,
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		alignItems: 'center',
 	},
-	categoryInfo: {
+	productInfo: {
 		flex: 1,
 	},
-	categoryCardName: {
+	productName: {
 		fontSize: 16,
 		fontWeight: 'bold',
 		color: COLORS.text,
+		marginBottom: 3,
 	},
-	categoryDate: {
+	productDescription: {
 		fontSize: 12,
 		color: '#666',
+		marginBottom: 3,
+	},
+	productPrice: {
+		fontSize: 14,
+		fontWeight: 'bold',
+		color: COLORS.primary,
+		marginBottom: 3,
+	},
+	stockInfo: {
+		fontSize: 10,
+		color: '#666',
+		fontStyle: 'italic',
 		marginTop: 2,
 	},
-	categoryActions: {
-		flexDirection: 'row',
-		gap: 10,
+	statusContainer: {
+		marginTop: 3,
 	},
-	categorySelector: {
-		borderWidth: 1,
-		borderColor: '#ddd',
-		borderRadius: 8,
-		padding: 12,
-		backgroundColor: '#fff',
+	statusText: {
+		fontSize: 10,
+		color: COLORS.text,
+	},
+	actions: {
 		flexDirection: 'row',
-		justifyContent: 'space-between',
+		gap: 5,
+	},
+	editButton: {
+		backgroundColor: '#FFF',
+	},
+	toggleButton: {
+		backgroundColor: '#FFF',
+	},
+	deleteButton: {
+		backgroundColor: '#FFF',
+	},
+	modalOverlay: {
+		flex: 1,
+		backgroundColor: 'rgba(0,0,0,0.5)',
+		justifyContent: 'center',
 		alignItems: 'center',
 	},
-	categorySelectorText: {
-		fontSize: 16,
+	modalContent: {
+		backgroundColor: COLORS.background,
+		paddingHorizontal: 30,
+		paddingVertical: 20,
+		borderRadius: 20,
+		width: '90%',
+		maxHeight: '80%',
+	},
+	modalTitle: {
+		fontSize: 20,
+		fontWeight: 'bold',
+		color: COLORS.primary,
+		marginBottom: 20,
+		textAlign: 'center',
+	},
+	modalButton: {
+		flex: 1,
+		padding: 15,
+		borderRadius: 10,
+		alignItems: 'center',
+	},
+	cancelButton: {
+		backgroundColor: '#E0E0E0',
+	},
+	modalButtonTextCancel: {
+		fontWeight: 'bold',
 		color: COLORS.text,
 	},
 	categoryOption: {
@@ -927,5 +726,18 @@ const styles = StyleSheet.create({
 	categoryOptionText: {
 		fontSize: 16,
 		color: COLORS.text,
+	},
+	categoryContent: {
+		flex: 1,
+	},
+	categoryNameRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 5,
+	},
+	categoryActionsRow: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
 	},
 });
