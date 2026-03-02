@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Alert } from 'react-native';
+import { onSnapshot, collection } from 'firebase/firestore';
+import { db } from '@/config/firebase';
 import { Product, Category } from '@/types';
 import { getCategoryName } from '@/utils';
 import { menuService, categoriesService } from '@/services/menuService';
@@ -127,37 +129,44 @@ export function MenuProvider({ children }: { children: ReactNode }) {
     }
 
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                const [menuData, categoriesData] = await Promise.all([
-                    menuService.getMenu(),
-                    categoriesService.getCategories()
-                ])
-                // Ordenar produtos
-                setProducts(menuData.sort((a, b) => {
-                    // 1. Ordena por categoria
-                    const categoryCompare = (getCategoryName(a, categoriesData) || '').localeCompare(getCategoryName(b, categoriesData) || '');
-                    if (categoryCompare !== 0) return categoryCompare;
+        setIsLoading(true);
+        
+        // Listener em tempo real para produtos
+        const unsubscribeProducts = onSnapshot(collection(db, 'menu'), (snapshot) => {
+            const productsData = snapshot.docs.map(doc => doc.data() as Product);
+            
+            // Ordenar produtos
+            setProducts(productsData.sort((a, b) => {
+                // 1. Ordena por categoria
+                const categoryCompare = (getCategoryName(a, categories || []) || '').localeCompare(getCategoryName(b, categories || []) || '');
+                if (categoryCompare !== 0) return categoryCompare;
 
-                    // 2. Se mesma categoria, ordena por nome
-                    return a.name.localeCompare(b.name);
-                }));
+                // 2. Se mesma categoria, ordena por nome
+                return a.name.localeCompare(b.name);
+            }));
+            
+            setIsLoading(false);
+        }, (error) => {
+            console.error('Erro no listener de produtos:', error);
+            setIsLoading(false);
+        });
 
-                // Ordenar categorias
-                setCategories(categoriesData.sort((a, b) => a.name.localeCompare(b.name)));
+        // Listener em tempo real para categorias
+        const unsubscribeCategories = onSnapshot(collection(db, 'categories'), (snapshot) => {
+            const categoriesData = snapshot.docs.map(doc => doc.data() as Category);
+            
+            // Ordenar categorias
+            setCategories(categoriesData.sort((a, b) => a.name.localeCompare(b.name)));
+        }, (error) => {
+            console.error('Erro no listener de categorias:', error);
+        });
 
-            } catch (error) {
-                console.error('Erro ao carregar menu:', error);
-                setProducts([]);
-                setCategories([]);
-                Alert.alert('Modo Offline', 'Conecte-se à internet para atualizar o cardápio.');
-            } finally {
-                setIsLoading(false);
-            }
+        // Cleanup
+        return () => {
+            unsubscribeProducts();
+            unsubscribeCategories();
         };
-
-        loadData();
-    }, []);
+    }, []); // Array vazio para executar apenas uma vez
 
     return (
         <MenuContext.Provider value={{

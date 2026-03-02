@@ -150,7 +150,8 @@ export default function CartScreen({ route, navigation }:
 
                             for (const item of cartItems) {
                                 if (item.hasStockControl) {
-                                    await decreaseStock(item.id, products, item.quantity);
+                                    console.log('🔍 CHAMANDO DECREASE STOCK para:', item.id, 'quantity:', item.quantity);
+                                    await decreaseStock(item.id, [], item.quantity);
                                 }
                             }
                             clearCart();

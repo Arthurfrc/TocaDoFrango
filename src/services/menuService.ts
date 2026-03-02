@@ -31,23 +31,15 @@ export const menuService = {
     },
 
     async getMenu(): Promise<Product[]> {
-        // Tenta buscar da coleção 'menu' primeiro (nova)
-        try {
-            const menuSnapshot = await getDocs(collection(db, MENU_COLLECTION));
-            if (!menuSnapshot.empty) {
-                return menuSnapshot.docs.map(doc => doc.data() as Product);
-            }
-        } catch (error) {
-            console.log('Buscando da coleção alternativa...');
-        }
-        
-        // Se não encontrar, busca da coleção 'products' (legada)
-        const productsSnapshot = await getDocs(collection(db, PRODUCT_COLLECTION));
-        return productsSnapshot.docs.map(doc => doc.data() as Product);
+        // Busca APENAS da coleção 'menu' (nova)
+        const menuSnapshot = await getDocs(collection(db, MENU_COLLECTION));
+        return menuSnapshot.docs.map(doc => doc.data() as Product);
     },
 
     async updateProductStock(productId: string, newStock: number): Promise<void> {
-        await productsService.updateProduct(productId, { stock: newStock });
+        // Atualiza APENAS na coleção 'menu' (nova)
+        const docRef = doc(db, MENU_COLLECTION, productId);
+        await updateDoc(docRef, { stock: newStock });
     },
 
     // Função temporária para limpar coleções antigas
