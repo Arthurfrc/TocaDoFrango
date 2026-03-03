@@ -8,14 +8,16 @@ import * as Application from 'expo-application';
 
 import { COLORS } from '@/constants/colors';
 import InputAlert from '@/components/InputAlert';
+import CustomAlert from '@/components/CustomAlert';
 
 export default function HomeScreen({ navigation }: any) {
 
     const ADMIN_DEVICE = '1234';
-    // const ADMIN_DEVICE = '5de8e407bf4a0f3e';
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [logoPress, setLogoPress] = useState(0);
     const [adminUnlocked, setAdminUnlocked] = useState(false);
+
+    const [showDevAlert, setShowDevAlert] = useState(false);
 
     const resetTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -166,6 +168,22 @@ export default function HomeScreen({ navigation }: any) {
                     <Text style={styles.buttonText}>Termos de Uso</Text>
                 </TouchableOpacity>
             </View>
+            <View style={styles.quickActions}>
+                <TouchableOpacity
+                    style={styles.devFooter}
+                    onPress={() => setShowDevAlert(true)}
+                >
+                    <MaterialIcons name="code" size={16} color={COLORS.text} />
+                </TouchableOpacity>
+                <CustomAlert
+                    visible={showDevAlert}
+                    title="Sobre o Desenvolvedor"
+                    message={`Desenvolvido por:\n👨‍💻 Arthur Felipe Rodrigues Costra\n📧 arthurfelipercosta@gmail.com\n🐙 github.com/arthurfelipercosta\n💼 linkedin.com/in/arthurfrc\n\n© 2026\nTodos os direitos reservados`}
+                    confirmText="Fechar"
+                    onConfirm={() => setShowDevAlert(false)}
+                    onCancel={() => setShowDevAlert(false)}
+                />
+            </View>
             <InputAlert
                 visible={showPasswordModal}
                 title="🔐 Acesso Admin"
@@ -282,5 +300,20 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: COLORS.text,
         marginBottom: 2,
+    },
+    devFooter: {
+        alignSelf: 'center',
+        marginBottom: 0,
+        marginTop: 0,
+        // backgroundColor: 'rgba(0,0,0,0.05)',
+        borderRadius: 15,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+    },
+    devFooterText: {
+        fontSize: 12,
+        color: COLORS.text,
+        fontWeight: 'bold',
+        opacity: 0.6,
     },
 });

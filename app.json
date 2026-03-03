@@ -22,13 +22,12 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF",
-        "translucent": false
+        "backgroundColor": "#FFFFFF"
       },
-      "statusBar": {
-        "backgroundColor": "#FFFFFF",
-        "style": "dark"
-      },
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.arthurfrc.tocadofrango"
