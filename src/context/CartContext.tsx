@@ -16,6 +16,7 @@ interface CartContextType {
     setDeliveryType: (type: 'entrega' | 'retirada') => void;
     getDeliveryFee: () => number;
     decreaseStock: (productId: string, products: Product[], quantity?: number) => Promise<void>;
+    checkStockAvailability: (cartItems: any[]) => Promise<{ available: boolean, message?: string }>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -44,7 +45,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         // Busca dados atualizados do Firebase
         const currentProducts = await menuService.getMenu();
         const product = currentProducts.find(p => p.id === productId);
-        
+
         if (product?.hasStockControl && product.stock !== undefined) {
             const newStock = Math.max(0, product.stock - quantity);
 
@@ -62,6 +63,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return deliveryType === 'entrega' ? APP_CONFIG.DELIVERY_FEE : 0;
     };
 
+    const checkStockAvailability = async (cartItems: any[]): Promise<{ available: boolean, message?: string }> => {
+        const outOfStockProducts = [];
+
+        // Buscar produtos ATUAIS do Firebase
+        const currentProducts = await menuService.getMenu();
+
+        for (const item of cartItems) {
+            if (item.hasStockControl) {
+                const freshProduct = currentProducts.find(p => p.id === item.id);
+                const availableStock = freshProduct?.stock || 0;
+
+                if (availableStock < item.quantity) {
+                    outOfStockProducts.push({
+                        name: item.name,
+                        available: availableStock,
+                        requested: item.quantity
+                    });
+                }
+            }
+        }
+
+        if (outOfStockProducts.length > 0) {
+            let message = '❌ Produtos sem estoque suficiente:\n';
+            outOfStockProducts.forEach(product => {
+                message += `🍗 ${product.name}\n`;
+                message += `📦 Disponível: ${product.available} unidade(s)\n`;
+                message += `🛒 Pedido: ${product.requested} unidade(s)\n`;
+            });
+            message += '💡 Por favor, ajuste seu carrinho para continuar.';
+
+            return { available: false, message };
+        }
+
+        return { available: true };
+    };
     const getTotalWithDelivery = () => {
         // TODO: Calculate total with delivery fee
         return 0;
@@ -100,7 +136,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
             deliveryType,
             setDeliveryType,
             getDeliveryFee,
-            decreaseStock
+            decreaseStock,
+            checkStockAvailability
         }}>
             {children}
         </CartContext.Provider>

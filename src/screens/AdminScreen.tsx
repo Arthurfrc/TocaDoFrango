@@ -199,14 +199,6 @@ export default function AdminScreen({ navigation }: any) {
 						<Text style={styles.title}>Painel Admin</Text>
 					</View>
 				</View>
-				<View style={styles.headerRight}>
-					<TouchableOpacity
-						style={[styles.actionButton, styles.settingsButton]}
-						onPress={() => setShowSettingsModal(true)}
-					>
-						<FontAwesome5 name="cog" size={16} color={COLORS.background} />
-					</TouchableOpacity>
-				</View>
 			</View>
 
 			{hasUnsavedChanges && (
@@ -300,7 +292,7 @@ export default function AdminScreen({ navigation }: any) {
 																	setShowCategoryModal(true);
 																}}
 															>
-																<FontAwesome5 name="edit" size={16} color={COLORS.primary} />
+																<FontAwesome5 name="edit" size={16} color={COLORS.admin} />
 															</TouchableOpacity>
 
 															<TouchableOpacity
@@ -314,7 +306,7 @@ export default function AdminScreen({ navigation }: any) {
 																style={styles.actionButton}
 																onPress={() => openEditModal(undefined, category.id)}
 															>
-																<FontAwesome5 name="plus" size={16} color={COLORS.primary} />
+																<FontAwesome5 name="plus" size={16} color={COLORS.admin} />
 															</TouchableOpacity>
 														</View>
 													</View>

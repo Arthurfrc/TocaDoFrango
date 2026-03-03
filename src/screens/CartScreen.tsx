@@ -34,8 +34,10 @@ export default function CartScreen({ navigation }: any) {
         setDeliveryType,
         getDeliveryFee,
         clearCart,
-        decreaseStock
+        decreaseStock,
+        checkStockAvailability,
     } = useCart();
+    const [loading, setLoading] = useState(false);
     const [customerInfo, setCustomerInfo] = useState({
         name: '',
         phone: '',
@@ -64,7 +66,8 @@ export default function CartScreen({ navigation }: any) {
         if (unavailableItems.length > 0) {
             Alert.alert(
                 '⚠️ Produtos Indisponíveis',
-                `Os seguintes produtos estão sem estoque no momento:\n${unavailableItems.join('\n')}`
+                `Os seguintes produtos estão sem estoque no momento:
+${unavailableItems.join('')}`
             );
         }
         return items;
@@ -73,31 +76,32 @@ export default function CartScreen({ navigation }: any) {
     const formatWhatsAppMessage = () => {
         const items = getCartItems();
 
-        let message = `🐔 *TOCA DO FRANGO - PEDIDO CONFIRMADO* 🐔\n\n`;
+        let message = `🐔 *TOCA DO FRANGO - PEDIDO CONFIRMADO* 🐔`;
 
-        message += `👤 *Cliente:* ${customerInfo.name}\n`;
-        message += `📞 *Tel:* ${customerInfo.phone}\n`;
-        message += `🏍️ *Entrega:* ${deliveryType === 'retirada' ? 'Retirada no local' : `Delivery (+R$ ${APP_CONFIG.DELIVERY_FEE.toFixed(2)})`}\n`;
+        message += `👤 *Cliente:* ${customerInfo.name}`;
+        message += `📞 *Tel:* ${customerInfo.phone}`;
+        message += `🏍️ *Entrega:* ${deliveryType === 'retirada' ? 'Retirada no local' : `Delivery (+R$ ${APP_CONFIG.DELIVERY_FEE.toFixed(2)})`}`;
         if (deliveryType === 'entrega') {
-            message += `📍 *Endereço:* ${customerInfo.address}\n`;
+            message += `📍 *Endereço:* ${customerInfo.address}`;
         }
-        message += `💳 *Pagamento:* ${customerInfo.paymentMethod}\n\n`;
+        message += `💳 *Pagamento:* ${customerInfo.paymentMethod}`;
 
-        message += `📋 *PEDIDO*\n`;
-        message += `${'─'.repeat(20)}\n`;
+        message += `📋 *PEDIDO*`;
+        message += `${'─'.repeat(20)}`;
 
         items.forEach((item, index) => {
-            message += `${index + 1}. ${item.name} - ${item.quantity}x = R$ ${(item.price * item.quantity).toFixed(2)}\n`;
+            message += `${index + 1}. ${item.name} - ${item.quantity}x = R$ ${(item.price * item.quantity).toFixed(2)}
+`;
         });
 
         if (getDeliveryFee() > 0) {
-            message += `\n🏍️ *Taxa de entrega:* R$ ${getDeliveryFee().toFixed(2)}\n`;
+            message += `🏍️ *Taxa de entrega:* R$ ${getDeliveryFee().toFixed(2)}`;
         }
 
-        message += `\n${'═'.repeat(20)}\n`;
-        message += `💰 *TOTAL: R$ ${getTotal.toFixed(2)}*\n`;
-        message += `⏱️ *Prazo:* 40-60 min\n`;
-        message += `📱 *Enviado pelo App*\n`;
+        message += `${'═'.repeat(20)}`;
+        message += `💰 *TOTAL: R$ ${getTotal.toFixed(2)}*`;
+        message += `⏱️ *Prazo:* 40-60 min`;
+        message += `📱 *Enviado pelo App*`;
 
         return message;
     };
@@ -108,63 +112,86 @@ export default function CartScreen({ navigation }: any) {
         return phoneRegex.test(cleanedPhone);
     };
 
-    const sendToWhatsApp = () => {
-        if (!customerInfo.name || !customerInfo.phone || !customerInfo.paymentMethod ||
-            (deliveryType === 'entrega' && !customerInfo.address)
-        ) {
-            Alert.alert('⚠️ Campos Obrigatórios', 'Por favor, preencha todos os seus dados!');
-            return;
-        }
+    const sendToWhatsApp = async () => {
+        setLoading(true);
 
-        if (!validatePhone(customerInfo.phone)) {
-            Alert.alert('⚠️ Telefone Inválido', 'Por favor, digite um número de telefone válido com DDD!');
-            return;
-        }
+        try {
+            // Verificar estoque ANTES de enviar
+            const stockCheck = await checkStockAvailability(cartItems);
 
-        const message = formatWhatsAppMessage();
-        const phoneNumber = APP_CONFIG.WHATSAPP_PHONE;
-        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+            if (!stockCheck.available) {
+                Alert.alert('Estoque Insuficiente', stockCheck.message);
+                setLoading(false);
+                return;
+            }
 
-        Alert.alert(
-            '📱 Enviar Pedido',
-            'Deseja enviar este pedido para o WhatsApp?',
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Enviar',
-                    onPress: async () => {
-                        try {
-                            await Linking.openURL(whatsappUrl);
+            // Validações dos dados do cliente
+            if (!customerInfo.name || !customerInfo.phone || !customerInfo.paymentMethod ||
+                (deliveryType === 'entrega' && !customerInfo.address)
+            ) {
+                Alert.alert('⚠️ Campos Obrigatórios', 'Por favor, preencha todos os seus dados!');
+                setLoading(false);
+                return;
+            }
 
-                            for (const item of cartItems) {
-                                if (item.hasStockControl) {
-                                    console.log('🔍 CHAMANDO DECREASE STOCK para:', item.id, 'quantity:', item.quantity);
-                                    await decreaseStock(item.id, [], item.quantity);
-                                }
+            if (!validatePhone(customerInfo.phone)) {
+                Alert.alert('⚠️ Telefone Inválido', 'Por favor, digite um número de telefone válido com DDD!');
+                setLoading(false);
+                return;
+            }
+
+            // Se tudo OK, atualiza estoque e envia
+            for (const item of cartItems) {
+                if (item.hasStockControl) {
+                    await decreaseStock(item.id, products, item.quantity);
+                }
+            }
+
+            const message = formatWhatsAppMessage();
+            const phoneNumber = APP_CONFIG.WHATSAPP_PHONE;
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+            Alert.alert(
+                '📱 Enviar Pedido',
+                'Deseja enviar este pedido para o WhatsApp?',
+                [
+                    { text: 'Cancelar', style: 'cancel' },
+                    {
+                        text: 'Enviar',
+                        onPress: async () => {
+                            try {
+                                await Linking.openURL(whatsappUrl);
+                                clearCart();
+                                setCustomerInfo({
+                                    name: '',
+                                    phone: '',
+                                    paymentMethod: '',
+                                    address: ''
+                                });
+                                setDeliveryType('retirada');
+                                Alert.alert('✅ Sucesso!', 'Pedido enviado para o WhatsApp!',
+                                    [{
+                                        text: 'OK',
+                                        onPress: () => {
+                                            navigation.navigate('Menu');
+                                        }
+                                    }]
+                                );
+                            } catch (error) {
+                                Alert.alert('❌ Erro', 'Não foi possível abrir o WhatsApp. Verifique se o app está instalado.');
+                                Alert.alert('📋 Mensagem:', message);
                             }
-                            clearCart();
-                            setCustomerInfo({
-                                name: '',
-                                phone: '',
-                                paymentMethod: '',
-                                address: ''
-                            });
-                            setDeliveryType('retirada');
-                            Alert.alert('✅ Sucesso!', 'Pedido enviado para o WhatsApp!',
-                                [{
-                                    text: 'OK',
-                                    onPress: () => {
-                                        navigation.navigate('Menu');
-                                    }
-                                }]
-                            );
-                        } catch (error) {
-                            Alert.alert('❌ Erro', 'Não foi possível abrir o WhatsApp. Verifique se o app está instalado.');
-                            Alert.alert('📋 Mensagem:', message);
                         }
                     }
-                }]
-        );
+                ]
+            );
+
+        } catch (error) {
+            console.error('Erro ao enviar pedido:', error);
+            Alert.alert('Erro', 'Não foi possível enviar o pedido');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const cartItems = useMemo(() => getCartItems(), [cart, products]);
@@ -173,6 +200,19 @@ export default function CartScreen({ navigation }: any) {
         const itemsTotal = getCartItems().reduce((total, item) => total + (item.price * item.quantity), 0);
         return itemsTotal + getDeliveryFee();
     }, [cartItems, deliveryType]);
+
+    const formatPhone = (text: string) => {
+        const cleaned = text.replace(/\D/g, '');
+        const limited = cleaned.slice(0, 11);
+
+        if (limited.length <= 2) {
+            return limited;
+        } else if (limited.length <= 7) {
+            return `(${limited.slice(0, 2)}) ${limited.slice(2)}`;
+        } else {
+            return `(${limited.slice(0, 2)}) ${limited.slice(2, 7)}-${limited.slice(7)}`;
+        }
+    }
 
     if (cartItems.length === 0) {
         return (
@@ -252,6 +292,7 @@ export default function CartScreen({ navigation }: any) {
                             style={styles.input}
                             value={customerInfo.name}
                             onChangeText={(text) => setCustomerInfo({ ...customerInfo, name: text })}
+                            autoCapitalize='words'
                         />
                     </View>
 
@@ -260,8 +301,13 @@ export default function CartScreen({ navigation }: any) {
                         <TextInput
                             style={styles.input}
                             value={customerInfo.phone}
-                            onChangeText={(text) => setCustomerInfo({ ...customerInfo, phone: text })}
+                            onChangeText={(text) => {
+                                const formatted = formatPhone(text);
+                                setCustomerInfo({ ...customerInfo, phone: formatted });
+                            }}
+                            placeholder='(00) 00000-0000'
                             keyboardType="phone-pad"
+                            maxLength={15}
                         />
                     </View>
 

@@ -105,11 +105,13 @@ const styles = StyleSheet.create({
     input: {
         borderWidth: 1,
         borderColor: COLORS.border,
+        textAlign: 'center',
         borderRadius: 10,
         padding: 15,
         fontSize: 16,
         marginBottom: 20,
         backgroundColor: '#FFF',
+        color: '#000',
     },
     buttonContainer: {
         flexDirection: 'row',

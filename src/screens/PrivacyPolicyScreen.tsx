@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     header: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: COLORS.privacy,
         paddingTop: 50,
         paddingBottom: 20,
         paddingHorizontal: 20,
