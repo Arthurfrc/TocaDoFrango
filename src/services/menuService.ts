@@ -67,6 +67,16 @@ export const categoriesService = {
     async saveAllCategories(categories: Category[]): Promise<void> {
         const batch = writeBatch(db);
 
+        const currentCategories = await categoriesService.getCategories();
+
+        currentCategories.forEach(current => {
+            const stillExists = categories.some(category => category.id === current.id);
+            if (!stillExists) {
+                const docRef = doc(db, CATEGORIES_COLLECTION, current.id);
+                batch.delete(docRef);
+            }
+        })
+
         categories.forEach(category => {
             const docRef = doc(db, CATEGORIES_COLLECTION, category.id);
             batch.set(docRef, category);
