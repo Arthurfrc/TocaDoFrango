@@ -26,6 +26,11 @@ interface MenuContextType {
     addCategory: (category: Category) => void;
     updateCategory: (categoryId: string, category: Category) => void;
     deleteCategory: (categoryId: string) => void;
+
+    syncFromFirebase: () => Promise<{
+        products: Product[];
+        categories: Category[];
+    }>
 }
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined);
@@ -36,6 +41,23 @@ export function MenuProvider({ children }: { children: ReactNode }) {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+
+    const syncFromFirebase = async () => {
+        try {
+            const freshProducts = await menuService.getMenu();
+            const freshCategories = await categoriesService.getCategories();
+
+            setProducts(freshProducts);
+            setCategories(freshCategories);
+
+            return {
+                products: freshProducts,
+                categories: freshCategories
+            }
+        } catch (error) {
+            throw error;
+        }
+    }
 
     const addProduct = (product: Product) => {
         setProducts(prev => [...(prev || []), product].sort((a, b) => {
@@ -130,21 +152,11 @@ export function MenuProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         setIsLoading(true);
-        
+
         // Listener em tempo real para produtos
         const unsubscribeProducts = onSnapshot(collection(db, 'menu'), (snapshot) => {
             const productsData = snapshot.docs.map(doc => doc.data() as Product);
-            
-            // Ordenar produtos
-            setProducts(productsData.sort((a, b) => {
-                // 1. Ordena por categoria
-                const categoryCompare = (getCategoryName(a, categories || []) || '').localeCompare(getCategoryName(b, categories || []) || '');
-                if (categoryCompare !== 0) return categoryCompare;
-
-                // 2. Se mesma categoria, ordena por nome
-                return a.name.localeCompare(b.name);
-            }));
-            
+            setProducts(productsData); // ✅ Salva SEM ordenar
             setIsLoading(false);
         }, (error) => {
             console.error('Erro no listener de produtos:', error);
@@ -154,19 +166,35 @@ export function MenuProvider({ children }: { children: ReactNode }) {
         // Listener em tempo real para categorias
         const unsubscribeCategories = onSnapshot(collection(db, 'categories'), (snapshot) => {
             const categoriesData = snapshot.docs.map(doc => doc.data() as Category);
-            
-            // Ordenar categorias
             setCategories(categoriesData.sort((a, b) => a.name.localeCompare(b.name)));
         }, (error) => {
             console.error('Erro no listener de categorias:', error);
         });
 
-        // Cleanup
         return () => {
             unsubscribeProducts();
             unsubscribeCategories();
         };
-    }, []); // Array vazio para executar apenas uma vez
+    }, []);
+
+    // ✅ Reordena produtos sempre que produtos OU categorias mudarem
+    useEffect(() => {
+        if (products.length > 0 && categories.length > 0) {
+            const sortedProducts = [...products].sort((a, b) => {
+                const categoryCompare = (getCategoryName(a, categories) || '').localeCompare(getCategoryName(b, categories) || '');
+                if (categoryCompare !== 0) return categoryCompare;
+                return a.name.localeCompare(b.name);
+            });
+
+            // Só atualiza se a ordem realmente mudou
+            const currentIds = products.map(p => p.id).join(',');
+            const sortedIds = sortedProducts.map(p => p.id).join(',');
+
+            if (currentIds !== sortedIds) {
+                setProducts(sortedProducts);
+            }
+        }
+    }, [products.length, categories.length]); // ✅ Dependências corretas
 
     return (
         <MenuContext.Provider value={{
@@ -175,6 +203,7 @@ export function MenuProvider({ children }: { children: ReactNode }) {
             updateProduct,
             deleteProduct,
             categories: categories || [],
+            syncFromFirebase,
             addCategory,
             updateCategory,
             deleteCategory,

@@ -77,31 +77,30 @@ ${unavailableItems.join('')}`
         const items = getCartItems();
 
         let message = `🐔 *TOCA DO FRANGO - PEDIDO CONFIRMADO* 🐔`;
-
-        message += `👤 *Cliente:* ${customerInfo.name}`;
-        message += `📞 *Tel:* ${customerInfo.phone}`;
-        message += `🏍️ *Entrega:* ${deliveryType === 'retirada' ? 'Retirada no local' : `Delivery (+R$ ${APP_CONFIG.DELIVERY_FEE.toFixed(2)})`}`;
+        message += `\n👤 *Cliente:* ${customerInfo.name}`;
+        message += `\n📞 *Tel:* ${customerInfo.phone}`;
+        message += `\n🏍️ *Entrega:* ${deliveryType === 'retirada' ? 'Retirada no local' : `Delivery (+R$ ${APP_CONFIG.DELIVERY_FEE.toFixed(2)})`}`;
         if (deliveryType === 'entrega') {
-            message += `📍 *Endereço:* ${customerInfo.address}`;
+            message += `\n📍 *Endereço:* ${customerInfo.address}`;
         }
-        message += `💳 *Pagamento:* ${customerInfo.paymentMethod}`;
+        message += `\n💳 *Pagamento:* ${customerInfo.paymentMethod}`;
 
-        message += `📋 *PEDIDO*`;
+        message += `\n📋 *PEDIDO*\n`;
         message += `${'─'.repeat(20)}`;
 
         items.forEach((item, index) => {
-            message += `${index + 1}. ${item.name} - ${item.quantity}x = R$ ${(item.price * item.quantity).toFixed(2)}
+            message += `\n${index + 1}. ${item.name} - ${item.quantity}x = R$ ${(item.price * item.quantity).toFixed(2)}
 `;
         });
 
         if (getDeliveryFee() > 0) {
-            message += `🏍️ *Taxa de entrega:* R$ ${getDeliveryFee().toFixed(2)}`;
+            message += `\n🏍️ *Taxa de entrega:* R$ ${getDeliveryFee().toFixed(2)}\n`;
         }
 
         message += `${'═'.repeat(20)}`;
-        message += `💰 *TOTAL: R$ ${getTotal.toFixed(2)}*`;
-        message += `⏱️ *Prazo:* 40-60 min`;
-        message += `📱 *Enviado pelo App*`;
+        message += `\n💰 *TOTAL: R$ ${getTotal.toFixed(2)}*`;
+        message += `\n⏱️ *Prazo:* 40-60 min`;
+        message += `\n📱 *Enviado pelo App*`;
 
         return message;
     };

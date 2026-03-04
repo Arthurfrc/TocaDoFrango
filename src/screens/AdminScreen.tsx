@@ -159,24 +159,6 @@ export default function AdminScreen({ navigation }: any) {
 		setExpandedCategories(newExpanded);
 	};
 
-	const handleCleanup = async () => {
-		showAlert(
-			'🧹 Limpar Dados Antigos',
-			'Isso irá limpar todos os dados das coleções antigas. Deseja continuar?',
-			async () => {
-				try {
-					await menuService.cleanupOldCollections();
-					Alert.alert('✅ Sucesso!', 'Dados antigos limpos com sucesso!');
-				} catch (error) {
-					Alert.alert('❌ Erro!', 'Erro ao limpar dados antigos.');
-				}
-			},
-			() => { },
-			'Confirmar',
-			'Cancelar'
-		);
-	};
-
 	if (isLoading) {
 		return (
 			<View style={styles.loading}>
@@ -788,5 +770,9 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'center',
+	},
+	syncButton: {
+		backgroundColor: COLORS.admin,
+		marginLeft: 10,
 	},
 });
