@@ -10,7 +10,7 @@ interface CartContextType {
     cart: { [key: string]: number };
     addToCart: (productId: string, products: Product[]) => void;
     removeFromCart: (productId: string) => void;
-    updateQuantity: (productId: string, quantity: number) => void;
+    updateQuantity: (productId: string, quantity: number, products: Product[]) => void;
     clearCart: () => void;
     deliveryType: 'entrega' | 'retirada';
     setDeliveryType: (type: 'entrega' | 'retirada') => void;
@@ -111,10 +111,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
     };
 
-    const updateQuantity = (productId: string, quantity: number) => {
+    const updateQuantity = (productId: string, quantity: number, products: Product[]) => {
         if (quantity <= 0) {
             removeFromCart(productId);
         } else {
+            const product = products.find(p => p.id === productId);
+            if (product?.hasStockControl && quantity > (product.stock || 0)) {
+                Alert.alert('❌ Estoque Insuficiente', `Apenas ${product.stock} unidades disponíveis!`);
+                return;
+            }
             setCart(prev => ({
                 ...prev,
                 [productId]: quantity

@@ -250,7 +250,7 @@ ${unavailableItems.join('')}`
                             <View style={styles.quantityControls}>
                                 <TouchableOpacity
                                     style={styles.quantityButton}
-                                    onPress={() => updateQuantity(item.id, item.quantity - 1)}
+                                    onPress={() => updateQuantity(item.id, item.quantity - 1, products)}
                                 >
                                     <Text style={styles.quantityButtonText}>-</Text>
                                 </TouchableOpacity>
@@ -259,7 +259,7 @@ ${unavailableItems.join('')}`
 
                                 <TouchableOpacity
                                     style={styles.quantityButton}
-                                    onPress={() => updateQuantity(item.id, item.quantity + 1)}
+                                    onPress={() => updateQuantity(item.id, item.quantity + 1, products)}
                                 >
                                     <Text style={styles.quantityButtonText}>+</Text>
                                 </TouchableOpacity>

@@ -31,6 +31,17 @@ export default function MenuScreen({ navigation }: any) {
     }
 
     const handleAddToCart = (productId: string) => {
+        const product = products.find(p => p.id === productId);
+
+        if (product?.hasStockControl && (!product.stock || product.stock <= 0)) {
+            setAlertConfig({
+                title: '❌ Sem Estoque!',
+                message: 'Este produto está esgotado no momento.'
+            });
+            setAlertVisible(true);
+            return;
+        }
+        
         addToCart(productId, products);
         setAlertConfig({
             title: '✅ Adicionado!',
