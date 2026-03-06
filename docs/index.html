@@ -3,16 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toca do Frango - App de Vendas</title>
+    <title>Toca do Frango - Delivery de Frango Assado</title>
+    <meta name="description" content="Peça o melhor frango assado pelo app. Entrega rápida e saborosa!">
     <style>
-        body { font-family: Arial; text-align: center; padding: 50px; }
-        .download-btn { background: #4CAF50; color: white; padding: 15px 30px; 
-                       text-decoration: none; border-radius: 5px; font-size: 18px; }
+        body { font-family: 'Segoe UI', Arial; margin: 0; background: #FFF5F5; }
+        .header { background: #DC143C; color: white; padding: 30px 20px; text-align: center; }
+        .hero { padding: 40px 20px; text-align: center; }
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .feature { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .download-section { text-align: center; padding: 40px 20px; background: #DC143C; color: white; }
+        .download-btn { background: white; color: #DC143C; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block; margin: 10px; }
+        .footer { text-align: center; padding: 20px; background: #333; color: white; }
+        .footer a { color: white; margin: 0 10px; }
     </style>
 </head>
 <body>
-    <h1>Toca do Frango</h1>
-    <p>Baixe nosso app para fazer pedidos</p>
-    <a href="#" class="download-btn">Em breve na Play Store</a>
+    <header class="header">
+        <h1>🍗 Toca do Frango</h1>
+        <p>O melhor frango assado da cidade, agora no seu celular!</p>
+    </header>
+
+    <section class="hero">
+        <h2>Peça pelo App e Receba em Casa</h2>
+        <p>Praticidade, sabor e entrega rápida</p>
+    </section>
+
+    <section class="features">
+        <div class="feature">
+            <h3>📱 Fácil de Usar</h3>
+            <p>Interface simples e intuitiva para fazer seus pedidos</p>
+        </div>
+        <div class="feature">
+            <h3>🚚 Entrega Rápida</h3>
+            <p>Acompanhe seu pedido em tempo real</p>
+        </div>
+        <div class="feature">
+            <h3>💳 Pagamento Seguro</h3>
+            <p>Diversas formas de pagamento</p>
+        </div>
+    </section>
+
+    <section class="download-section">
+        <h2>Baixe Agora!</h2>
+        <p>Disponível em breve na Google Play Store</p>
+        <a href="#" class="download-btn">Em Breve na Play Store</a>
+    </section>
+
+    <footer class="footer">
+        <p>&​copy; 2024 Toca do Frango</p>
+        <div>
+            <a href="/terms">Termos de Serviço</a>
+            <a href="/privacy">Política de Privacidade</a>
+        </div>
+    </footer>
 </body>
 </html>
