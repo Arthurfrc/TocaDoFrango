@@ -7,6 +7,10 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "statusBar": {
+      "style": "dark",
+      "translucent": false
+    },
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
