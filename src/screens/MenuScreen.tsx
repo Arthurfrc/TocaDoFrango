@@ -15,6 +15,7 @@ export default function MenuScreen({ navigation }: any) {
     const [alertVisible, setAlertVisible] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ title: '', message: '' });
     const { products, categories } = useMenu();
+    const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
     const menuByCategory = products
         .filter(product => product.available)
         .reduce((acc, product) => {
@@ -30,25 +31,26 @@ export default function MenuScreen({ navigation }: any) {
         return Object.values(cart).reduce((sum, qty) => sum + qty, 0);
     }
 
+    const showAlert = (title: string, message: string) => {
+        setAlertConfig({ title, message });
+        setAlertVisible(true);
+    };
+
+    const toggleCategoryExpansion = (categoryName: string) => {
+        setExpandedCategory(prev => prev === categoryName ? null : categoryName);
+    };
+
     const handleAddToCart = (productId: string) => {
         const product = products.find(p => p.id === productId);
 
         if (product?.hasStockControl && (!product.stock || product.stock <= 0)) {
-            setAlertConfig({
-                title: '❌ Sem Estoque!',
-                message: 'Este produto está esgotado no momento.'
-            });
-            setAlertVisible(true);
+            showAlert('❌ Sem Estoque!', 'Este produto está esgotado no momento.');
             return;
         }
 
         const wasAdded = addToCart(productId, products);
         if (wasAdded) {
-            setAlertConfig({
-                title: '✅ Adicionado!',
-                message: 'Produto adicionado ao carrinho'
-            });
-            setAlertVisible(true);
+            showAlert('✅ Adicionado!', 'Produto adicionado ao carrinho');
         }
     };
 
@@ -68,29 +70,49 @@ export default function MenuScreen({ navigation }: any) {
                 </TouchableOpacity>
             )}
 
-            {Object.entries(menuByCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, products]) => (
+            {Object.entries(menuByCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, products]) => {
+                const isExpanded = expandedCategory === category;
 
-                <View key={category} style={styles.categorySection}>
-                    <Text style={styles.categoryTitle}>{category}</Text>
-
-                    {products.map(product => (
-                        <View key={product.id} style={styles.productCard}>
-                            <View style={styles.productInfo}>
-                                <Text style={styles.productName}>{product.name}</Text>
-                                <Text style={styles.productDescription}>{product.description}</Text>
-                                <Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
+                return (
+                    <View key={category} style={styles.categorySection}>
+                        <TouchableOpacity
+                            style={styles.categoryHeader}
+                            onPress={() => toggleCategoryExpansion(category)}
+                        >
+                            <View style={styles.categoryHeaderContent}>
+                                <MaterialIcons
+                                    name={isExpanded ? "expand-more" : "chevron-right"}
+                                    size={24}
+                                    color={COLORS.primary}
+                                    style={{ marginRight: 10 }}
+                                />
+                                <Text style={styles.categoryTitle}>{category}</Text>
                             </View>
+                        </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={styles.addButton}
-                                onPress={() => handleAddToCart(product.id)}
-                            >
-                                <MaterialIcons name="add-shopping-cart" size={24} color="white" />
-                            </TouchableOpacity>
-                        </View>
-                    ))}
-                </View>
-            ))}
+                        {isExpanded && (
+                            <View style={styles.productsContainer}>
+                                {products.map(product => (
+                                    <View key={product.id} style={styles.productCard}>
+                                        <View style={styles.productInfo}>
+                                            <Text style={styles.productName}>{product.name}</Text>
+                                            <Text style={styles.productDescription}>{product.description}</Text>
+                                            <Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
+                                        </View>
+
+                                        <TouchableOpacity
+                                            style={styles.addButton}
+                                            onPress={() => handleAddToCart(product.id)}
+                                        >
+                                            <MaterialIcons name="add-shopping-cart" size={24} color="white" />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                );
+            })}
             <CustomAlert
                 visible={alertVisible}
                 title={alertConfig.title}
@@ -120,14 +142,32 @@ const styles = StyleSheet.create({
     categorySection: {
         marginBottom: 25,
     },
+    categoryHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF',
+        padding: 15,
+        borderRadius: 10,
+        marginBottom: 10,
+        elevation: 2,
+    },
+    categoryHeaderContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
     categoryTitle: {
         fontSize: 20,
         fontWeight: 'bold',
         color: COLORS.primary,
-        marginBottom: 15,
-        borderBottomWidth: 2,
-        borderBottomColor: COLORS.secondary,
-        paddingBottom: 5,
+    },
+    categoryCount: {
+        fontSize: 14,
+        color: '#666',
+        marginLeft: 10,
+    },
+    productsContainer: {
+        paddingLeft: 20,
     },
     productCard: {
         backgroundColor: '#FFF',

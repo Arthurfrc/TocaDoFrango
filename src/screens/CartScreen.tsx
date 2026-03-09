@@ -189,7 +189,7 @@ export default function CartScreen({ navigation }: any) {
             if (!validatePhone(customerInfo.phone)) {
                 showAlert(
                     '⚠️ Telefone Inválido',
-                    'Por favor, digite um número de telefone válido com DDD!',
+                    'Por favor, digite um número de DDD + telefone válido!',
                     () => { },
                     'OK'
                 );
@@ -197,41 +197,55 @@ export default function CartScreen({ navigation }: any) {
                 return;
             }
 
+            // ✅ AGORA SIM - MOSTRA CONFIRMAÇÃO ANTES DE ENVIAR
             const message = formatWhatsAppMessage();
             const phoneNumber = APP_CONFIG.WHATSAPP_PHONE;
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
-            try {
-                await Linking.openURL(whatsappUrl);
-                clearCart();
-                setCustomerInfo({
-                    name: '',
-                    phone: '',
-                    paymentMethod: '',
-                    address: ''
-                });
-                setDeliveryType('retirada');
-                showAlert(
-                    '✅ Sucesso!',
-                    'Pedido enviado para o WhatsApp!',
-                    () => { navigation.navigate('Menu'); },
-                    'OK'
-                );
-            } catch (error) {
-                showAlert(
-                    '❌ Erro',
-                    'Não foi possível abrir o WhatsApp. Verifique se o app está instalado.',
-                    () => { },
-                    'OK'
-                );
-                showAlert('📋 Mensagem:', message, () => { }, 'OK');
-            }
-            // Se tudo OK, atualiza estoque e envia
-            for (const item of cartItems) {
-                if (item.hasStockControl) {
-                    await decreaseStock(item.id, products, item.quantity);
-                }
-            }
+            showAlert(
+                '📱 Enviar Pedido',
+                'Deseja enviar este pedido para o WhatsApp?',
+                async () => {
+                    // SÓ EXECUTA SE CLICAR "ENVIAR"
+                    try {
+                        await Linking.openURL(whatsappUrl);
+
+                        // Diminui estoque
+                        for (const item of cartItems) {
+                            if (item.hasStockControl) {
+                                await decreaseStock(item.id, products, item.quantity);
+                            }
+                        }
+
+                        clearCart();
+                        setCustomerInfo({
+                            name: '',
+                            phone: '',
+                            paymentMethod: '',
+                            address: ''
+                        });
+                        setDeliveryType('retirada');
+
+                        showAlert(
+                            '✅ Sucesso!',
+                            'Pedido enviado para o WhatsApp!',
+                            () => { navigation.navigate('Menu'); },
+                            'OK'
+                        );
+                    } catch (error) {
+                        showAlert(
+                            '❌ Erro',
+                            'Não foi possível abrir o WhatsApp. Verifique se o app está instalado.',
+                            () => { },
+                            'OK'
+                        );
+                    }
+                },
+                'ENVIAR',
+                () => { }, // onCancel - apenas fecha
+                'CANCELAR'
+            );
+
         } catch (error) {
             console.error('Erro ao enviar pedido:', error);
             showAlert('Erro', 'Não foi possível enviar o pedido', () => { }, 'OK');
