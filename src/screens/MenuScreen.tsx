@@ -41,13 +41,15 @@ export default function MenuScreen({ navigation }: any) {
             setAlertVisible(true);
             return;
         }
-        
-        addToCart(productId, products);
-        setAlertConfig({
-            title: '✅ Adicionado!',
-            message: 'Produto adicionado ao carrinho'
-        });
-        setAlertVisible(true);
+
+        const wasAdded = addToCart(productId, products);
+        if (wasAdded) {
+            setAlertConfig({
+                title: '✅ Adicionado!',
+                message: 'Produto adicionado ao carrinho'
+            });
+            setAlertVisible(true);
+        }
     };
 
     return (
@@ -83,7 +85,7 @@ export default function MenuScreen({ navigation }: any) {
                                 style={styles.addButton}
                                 onPress={() => handleAddToCart(product.id)}
                             >
-                                <Text style={styles.addButtonText}>+</Text>
+                                <MaterialIcons name="add-shopping-cart" size={24} color="white" />
                             </TouchableOpacity>
                         </View>
                     ))}

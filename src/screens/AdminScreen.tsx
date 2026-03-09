@@ -59,15 +59,15 @@ export default function AdminScreen({ navigation }: any) {
 	const [categoryName, setCategoryName] = useState('');
 	const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
-	const [showCategorySelector, setShowCategorySelector] = useState(false);
 	const [selectedProductForCategory, setSelectedProductForCategory] = useState<Product | null>(null);
 	const [selectedCategoryId, setSelectedCategoryId] = useState('');
+	const [showCategorySelector, setShowCategorySelector] = useState(false);
 
 	const [showSettingsModal, setShowSettingsModal] = useState(false);
 
 	// Estados para expansão
 	const [categoriesExpanded, setCategoriesExpanded] = useState(true);
-	const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+	const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
 	const openEditModal = (product?: Product, categoryId?: string) => {
 		setEditingProduct(product || null);
@@ -150,13 +150,7 @@ export default function AdminScreen({ navigation }: any) {
 	};
 
 	const toggleCategoryExpansion = (categoryId: string) => {
-		const newExpanded = new Set(expandedCategories);
-		if (newExpanded.has(categoryId)) {
-			newExpanded.delete(categoryId);
-		} else {
-			newExpanded.add(categoryId);
-		}
-		setExpandedCategories(newExpanded);
+		setExpandedCategory(prev => prev === categoryId ? null : categoryId);
 	};
 
 	if (isLoading) {
@@ -242,7 +236,7 @@ export default function AdminScreen({ navigation }: any) {
 							) : (
 								categories.map((category) => {
 									const categoryProducts = products.filter(p => p.categoryId === category.id);
-									const isExpanded = expandedCategories.has(category.id);
+									const isExpanded = expandedCategory === category.id;
 
 									return (
 										<View key={category.id} style={styles.categoryContainer}>
