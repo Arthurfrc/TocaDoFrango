@@ -10,7 +10,7 @@ interface CustomAlertProps {
     title: string;
     message: string;
     onConfirm: () => void;
-    onCancel: () => void;
+    onCancel?: () => void;
     confirmText?: string;
     cancelText?: string;
 }
@@ -23,13 +23,14 @@ export default function CustomAlert({
 
     const finalConfirmText = confirmText || 'Confirmar';
     const finalCancelText = cancelText || 'Cancelar';
+    const showCancelButton = onCancel && cancelText && cancelText.trim() !== '';
 
     return (
         <Modal
             transparent={true}
             visible={visible}
             animationType="fade"
-            onRequestClose={onCancel}
+            onRequestClose={onCancel || onConfirm}
         >
             <View style={styles.overlay}>
                 <View style={styles.alertBox}>
@@ -37,12 +38,14 @@ export default function CustomAlert({
                     <Text style={styles.message}>{message}</Text>
 
                     <View style={styles.buttonContainer}>
-                        {cancelText && cancelText.trim() !== '' &&
+                        {showCancelButton &&
                             <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
                                 <Text style={styles.cancelButtonText}>{finalCancelText}</Text>
                             </TouchableOpacity>}
 
-                        <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>
+                        <TouchableOpacity style={[styles.confirmButton,
+                        !showCancelButton && styles.confirmButtonFull
+                        ]} onPress={onConfirm}>
                             <Text style={styles.confirmButtonText}>{finalConfirmText}</Text>
                         </TouchableOpacity>
                     </View>
@@ -100,6 +103,9 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginLeft: 10,
         alignItems: 'center',
+    },
+    confirmButtonFull: {
+        marginLeft: 0,
     },
     cancelButtonText: {
         color: '#666',
