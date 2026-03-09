@@ -11,6 +11,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <StatusBar style='dark' />
         <MenuProvider>
           <CartProvider>
             <AppNavigator />
