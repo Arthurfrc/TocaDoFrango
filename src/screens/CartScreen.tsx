@@ -22,6 +22,16 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { COLORS } from '@/constants/colors';
 import { useMenu } from '@/context/MenuContext';
 import { useCart } from '@/context/CartContext';
+import CustomAlert from '@/components/CustomAlert';
+
+interface AlertConfig {
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmText: string;
+    onCancel?: () => void;
+    cancelText?: string;
+}
 
 export default function CartScreen({ navigation }: any) {
     const [showPaymentOptions, setShowPaymentOptions] = useState(false);
@@ -45,6 +55,14 @@ export default function CartScreen({ navigation }: any) {
         address: ''
     });
 
+    const [alertConfig, setAlertConfig] = useState<AlertConfig>({
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        confirmText: 'Confirmar',
+    });
+    const [alertVisible, setAlertVisible] = useState(false);
+
     const { products } = useMenu();
 
     const getCartItems = () => {
@@ -64,13 +82,40 @@ export default function CartScreen({ navigation }: any) {
         }
 
         if (unavailableItems.length > 0) {
-            Alert.alert(
+            showAlert(
                 '⚠️ Produtos Indisponíveis',
-                `Os seguintes produtos estão sem estoque no momento:
-${unavailableItems.join('')}`
+                `Os seguintes produtos estão sem estoque no momento:\n
+                ${unavailableItems.join('')}`,
+                () => { },
+                'OK'
             );
         }
         return items;
+    };
+
+    const showAlert = (
+        title: string,
+        message: string,
+        onConfirm: () => void,
+        confirmText: string,
+        onCancel?: () => void,
+        cancelText?: string,
+    ) => {
+        setAlertConfig({
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setAlertVisible(false);
+            },
+            confirmText,
+            onCancel: onCancel ? () => {
+                onCancel();
+                setAlertVisible(false);
+            } : undefined,
+            cancelText,
+        });
+        setAlertVisible(true);
     };
 
     const formatWhatsAppMessage = () => {
@@ -119,7 +164,10 @@ ${unavailableItems.join('')}`
             const stockCheck = await checkStockAvailability(cartItems);
 
             if (!stockCheck.available) {
-                Alert.alert('Estoque Insuficiente', stockCheck.message);
+                showAlert(
+                    'Estoque Insuficiente',
+                    stockCheck.message || 'Estoque insuficiente para alguns itens',
+                    () => { }, 'OK');
                 setLoading(false);
                 return;
             }
@@ -128,66 +176,65 @@ ${unavailableItems.join('')}`
             if (!customerInfo.name || !customerInfo.phone || !customerInfo.paymentMethod ||
                 (deliveryType === 'entrega' && !customerInfo.address)
             ) {
-                Alert.alert('⚠️ Campos Obrigatórios', 'Por favor, preencha todos os seus dados!');
+                showAlert(
+                    '⚠️ Campos Obrigatórios',
+                    'Por favor, preencha todos os seus dados!',
+                    () => { },
+                    'OK'
+                );
                 setLoading(false);
                 return;
             }
 
             if (!validatePhone(customerInfo.phone)) {
-                Alert.alert('⚠️ Telefone Inválido', 'Por favor, digite um número de telefone válido com DDD!');
+                showAlert(
+                    '⚠️ Telefone Inválido',
+                    'Por favor, digite um número de telefone válido com DDD!',
+                    () => { },
+                    'OK'
+                );
                 setLoading(false);
                 return;
-            }
-
-            // Se tudo OK, atualiza estoque e envia
-            for (const item of cartItems) {
-                if (item.hasStockControl) {
-                    await decreaseStock(item.id, products, item.quantity);
-                }
             }
 
             const message = formatWhatsAppMessage();
             const phoneNumber = APP_CONFIG.WHATSAPP_PHONE;
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
-            Alert.alert(
-                '📱 Enviar Pedido',
-                'Deseja enviar este pedido para o WhatsApp?',
-                [
-                    { text: 'Cancelar', style: 'cancel' },
-                    {
-                        text: 'Enviar',
-                        onPress: async () => {
-                            try {
-                                await Linking.openURL(whatsappUrl);
-                                clearCart();
-                                setCustomerInfo({
-                                    name: '',
-                                    phone: '',
-                                    paymentMethod: '',
-                                    address: ''
-                                });
-                                setDeliveryType('retirada');
-                                Alert.alert('✅ Sucesso!', 'Pedido enviado para o WhatsApp!',
-                                    [{
-                                        text: 'OK',
-                                        onPress: () => {
-                                            navigation.navigate('Menu');
-                                        }
-                                    }]
-                                );
-                            } catch (error) {
-                                Alert.alert('❌ Erro', 'Não foi possível abrir o WhatsApp. Verifique se o app está instalado.');
-                                Alert.alert('📋 Mensagem:', message);
-                            }
-                        }
-                    }
-                ]
-            );
-
+            try {
+                await Linking.openURL(whatsappUrl);
+                clearCart();
+                setCustomerInfo({
+                    name: '',
+                    phone: '',
+                    paymentMethod: '',
+                    address: ''
+                });
+                setDeliveryType('retirada');
+                showAlert(
+                    '✅ Sucesso!',
+                    'Pedido enviado para o WhatsApp!',
+                    () => { navigation.navigate('Menu'); },
+                    'OK'
+                );
+            } catch (error) {
+                showAlert(
+                    '❌ Erro',
+                    'Não foi possível abrir o WhatsApp. Verifique se o app está instalado.',
+                    () => { },
+                    'OK'
+                );
+                showAlert('📋 Mensagem:', message, () => { }, 'OK');
+            }
+            // Se tudo OK, atualiza estoque e envia
+            for (const item of cartItems) {
+                if (item.hasStockControl) {
+                    await decreaseStock(item.id, products, item.quantity);
+                }
+            }
         } catch (error) {
             console.error('Erro ao enviar pedido:', error);
-            Alert.alert('Erro', 'Não foi possível enviar o pedido');
+            showAlert('Erro', 'Não foi possível enviar o pedido', () => { }, 'OK');
         } finally {
             setLoading(false);
         }
@@ -430,7 +477,16 @@ ${unavailableItems.join('')}`
                     <Text style={styles.sendButtonText}>Enviar para WhatsApp</Text>
                 </TouchableOpacity>
             </ScrollView>
-        </KeyboardAvoidingView>
+            <CustomAlert
+                visible={alertVisible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onConfirm={alertConfig.onConfirm}
+                confirmText={alertConfig.confirmText}
+                onCancel={() => setAlertVisible(false)}
+                cancelText={alertConfig.cancelText}
+            />
+        </KeyboardAvoidingView >
     );
 }
 

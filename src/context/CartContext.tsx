@@ -5,10 +5,11 @@ import { Product } from '@/types';
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Alert } from 'react-native';
 import { menuService } from '@/services/menuService';
+import CustomAlert from '@/components/CustomAlert';
 
 interface CartContextType {
     cart: { [key: string]: number };
-    addToCart: (productId: string, products: Product[]) => void;
+    addToCart: (productId: string, products: Product[]) => boolean;
     removeFromCart: (productId: string) => void;
     updateQuantity: (productId: string, quantity: number, products: Product[]) => void;
     clearCart: () => void;
@@ -25,20 +26,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const [cart, setCart] = useState<{ [key: string]: number }>({});
     const [deliveryType, setDeliveryType] = useState<'entrega' | 'retirada'>('retirada');
 
-    const addToCart = (productId: string, products: Product[]) => {
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({ title: '', message: '' });
+
+    const addToCart = (productId: string, products: Product[]): boolean => {
         const product = products.find(p => p.id === productId);
 
         if (product?.hasStockControl) {
             const currentQuantity = cart[productId] || 0;
             if (currentQuantity >= (product.stock || 0)) {
-                Alert.alert('❌ Estoque Esgotado', 'Este produto não tem mais unidades disponíveis!');
-                return;
+                setAlertConfig({
+                    title: '❌ Estoque Esgotado',
+                    message: 'Este produto não tem mais unidades disponíveis no momento!'
+                });
+                setAlertVisible(true);
+                return false;
             }
         }
         setCart(prev => ({
             ...prev,
             [productId]: (prev[productId] || 0) + 1
         }));
+        return true;
     };
 
     const decreaseStock = async (productId: string, products: Product[], quantity = 1) => {
@@ -54,7 +63,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 await menuService.updateProductStock(productId, newStock);
             } catch (error) {
                 console.error('Erro ao atualizar estoque:', error);
-                Alert.alert('❌ Erro', 'Não foi possível atualizar o estoque');
+                setAlertConfig({
+                    title: '❌ Erro',
+                    message: 'Não foi possível atualizar o estoque'
+                });
+                setAlertVisible(true);
             }
         }
     };
@@ -117,7 +130,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         } else {
             const product = products.find(p => p.id === productId);
             if (product?.hasStockControl && quantity > (product.stock || 0)) {
-                Alert.alert('❌ Estoque Insuficiente', `Apenas ${product.stock} unidades disponíveis!`);
+                setAlertConfig({
+                    title: '❌ Estoque Insuficiente',
+                    message: `Apenas ${product.stock} unidade(s) disponível(is)!`
+                });
+                setAlertVisible(true);
                 return;
             }
             setCart(prev => ({
@@ -145,6 +162,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
             checkStockAvailability
         }}>
             {children}
+            <CustomAlert
+                visible={alertVisible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onConfirm={() => setAlertVisible(false)}
+                onCancel={() => setAlertVisible(false)}
+            />
         </CartContext.Provider>
     );
 }
