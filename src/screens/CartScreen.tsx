@@ -225,13 +225,6 @@ export default function CartScreen({ navigation }: any) {
                             address: ''
                         });
                         setDeliveryType('retirada');
-
-                        showAlert(
-                            '✅ Sucesso!',
-                            'Pedido enviado para o WhatsApp!',
-                            () => { navigation.navigate('Menu'); },
-                            'OK'
-                        );
                     } catch (error) {
                         showAlert(
                             '❌ Erro',
