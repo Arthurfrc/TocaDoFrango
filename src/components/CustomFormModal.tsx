@@ -8,6 +8,7 @@ import {
     Modal,
     StyleSheet,
     TextInput,
+    KeyboardTypeOptions,
 } from 'react-native';
 import { COLORS } from '@/constants/colors';
 
@@ -22,6 +23,8 @@ interface CustomFormModalProps {
     onCancel: () => void;
     saveButtonText?: string;
     icon?: string;
+    keyboardType?: KeyboardTypeOptions;
+    maxLength?: number;
 }
 
 export default function CustomFormModal({
@@ -34,7 +37,9 @@ export default function CustomFormModal({
     onSave,
     onCancel,
     saveButtonText = 'Salvar',
-    icon
+    icon,
+    keyboardType,
+    maxLength
 }: CustomFormModalProps) {
     return (
         <Modal
@@ -56,6 +61,8 @@ export default function CustomFormModal({
                             placeholder={fieldPlaceholder}
                             value={fieldValue}
                             onChangeText={onFieldChange}
+                            keyboardType={keyboardType || 'default'}
+                            maxLength={maxLength}
                         />
                     </View>
 
