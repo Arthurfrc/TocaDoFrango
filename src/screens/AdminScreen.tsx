@@ -1,6 +1,6 @@
 // src/screens/AdminScreen.tsx
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
 	View,
 	Text,
@@ -14,6 +14,7 @@ import {
 	Alert
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { COLORS } from '@/constants/colors';
 import { Product, Category } from '@/types';
@@ -25,6 +26,8 @@ import CustomAlert from '@/components/CustomAlert';
 import CustomModal from '@/components/CustomModal';
 import CustomFormModal from '@/components/CustomFormModal';
 import CustomProductModal from '@/components/CustomProductModal';
+
+import { adminNumber } from '@/utils/whatsapp';
 
 export default function AdminScreen({ navigation }: any) {
 	const { products,
@@ -64,6 +67,9 @@ export default function AdminScreen({ navigation }: any) {
 	const [showCategorySelector, setShowCategorySelector] = useState(false);
 
 	const [showSettingsModal, setShowSettingsModal] = useState(false);
+	const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+	const [adminWhatsApp, setAdminWhatsApp] = useState('');
+	const [adminInputNumber, setAdminInputNumber] = useState('');
 
 	// Estados para expansão
 	const [categoriesExpanded, setCategoriesExpanded] = useState(true);
@@ -116,6 +122,11 @@ export default function AdminScreen({ navigation }: any) {
 
 	const settingsOptions = [
 		{
+			id: 'whatsapp',
+			title: '📱 WhatsApp Admin',
+			onPress: () => setShowWhatsAppModal(true)
+		},
+		{
 			id: 'privacy',
 			title: '📄 Política de Privacidade',
 			onPress: () => navigation.navigate('PrivacyPolicy')
@@ -153,6 +164,61 @@ export default function AdminScreen({ navigation }: any) {
 		setExpandedCategory(prev => prev === categoryId ? null : categoryId);
 	};
 
+	const loadAdminWhatsApp = async () => {
+		try {
+			const saved = await AsyncStorage.getItem('adminWhatsApp');
+			if (saved) {
+				setAdminWhatsApp(saved);
+			} else {
+				setAdminWhatsApp('');
+			}
+		} catch (error) {
+			console.error('Erro ao carregar WhatsApp:', error);
+			setAdminWhatsApp('');
+		}
+	};
+
+	const formatWhatsApp = (value: string) => {
+		// Remove todos os caracteres não numéricos
+		const cleanValue = value.replace(/\D/g, '');
+
+		// Limita a 11 dígitos (DDD + 9 dígitos)
+		const limitedValue = cleanValue.slice(0, 11);
+
+		// Aplica formatação (XX) XXXXX-XXXX
+		if (limitedValue.length <= 2) {
+			return limitedValue;
+		} else if (limitedValue.length <= 7) {
+			return `(${limitedValue.slice(0, 2)}) ${limitedValue.slice(2)}`;
+		} else {
+			return `(${limitedValue.slice(0, 2)}) ${limitedValue.slice(2, 7)}-${limitedValue.slice(7)}`;
+		}
+	};
+
+	const getDisplayWhatsApp = () => {
+		if (!adminWhatsApp) return '';
+		// Remove o +55 para exibir no input
+		const without55 = adminWhatsApp.startsWith('55') ? adminWhatsApp.substring(2) : adminWhatsApp;
+		return formatWhatsApp(without55);
+	};
+
+	const saveAdminWhatsApp = async (newNumber: string) => {
+		try {
+			// Remove caracteres não numéricos e formatação
+			const cleanNumber = newNumber.replace(/\D/g, '');
+			// Adiciona +55 se não começar com 55
+			const fullNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
+			await AsyncStorage.setItem('adminWhatsApp', fullNumber);
+			setAdminWhatsApp(fullNumber);
+		} catch (error) {
+			console.error('Erro ao salvar WhatsApp:', error);
+		}
+	};
+
+	useEffect(() => {
+		loadAdminWhatsApp();
+	}, []);
+
 	if (isLoading) {
 		return (
 			<View style={styles.loading}>
@@ -175,6 +241,15 @@ export default function AdminScreen({ navigation }: any) {
 						<Text style={styles.title}>Painel Admin</Text>
 					</View>
 				</View>
+				<TouchableOpacity
+					style={styles.whatsappButton}
+					onPress={() => {
+						setAdminInputNumber(getDisplayWhatsApp());
+						setShowWhatsAppModal(true);
+					}}
+				>
+					<FontAwesome5 name="phone" size={24} color={COLORS.background} />
+				</TouchableOpacity>
 			</View>
 
 			{hasUnsavedChanges && (
@@ -480,6 +555,29 @@ export default function AdminScreen({ navigation }: any) {
 				options={settingsOptions}
 				onClose={() => setShowSettingsModal(false)}
 			/>
+			<CustomFormModal
+				visible={showWhatsAppModal}
+				title="Configurar WhatsApp"
+				fieldLabel="📱Número do WhatsApp"
+				fieldValue={adminInputNumber}
+				fieldPlaceholder="(84) 99876-5432"
+				onFieldChange={(value) => {
+					const formatted = formatWhatsApp(value);
+					setAdminInputNumber(formatted);
+				}}
+				onSave={() => {
+					saveAdminWhatsApp(adminInputNumber);
+					setAdminInputNumber('');
+					setShowWhatsAppModal(false);
+				}}
+				onCancel={() => {
+					setAdminInputNumber('');
+					setShowWhatsAppModal(false);
+				}}
+				saveButtonText="Salvar"
+				keyboardType="phone-pad"
+				maxLength={15}
+			/>
 		</View>
 	);
 }
@@ -495,6 +593,11 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'center',
+	},
+	whatsappButton: {
+		padding: 8,
+		backgroundColor: 'rgba(255,255,255,0.2)',
+		borderRadius: 20,
 	},
 	title: {
 		fontSize: 24,
@@ -715,6 +818,28 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 	},
+	input: {
+		width: '100%',
+		height: 50,
+		backgroundColor: '#FFF',
+		borderRadius: 10,
+		paddingHorizontal: 15,
+		fontSize: 16,
+		borderWidth: 1,
+		borderColor: '#DDD',
+		marginBottom: 20,
+	},
+	saveButton: {
+		backgroundColor: COLORS.primary,
+		paddingHorizontal: 30,
+		paddingVertical: 12,
+		borderRadius: 25,
+	},
+	saveButtonText: {
+		color: '#FFF',
+		fontSize: 16,
+		fontWeight: 'bold',
+	},
 	modalContent: {
 		backgroundColor: COLORS.background,
 		paddingHorizontal: 30,
@@ -722,6 +847,13 @@ const styles = StyleSheet.create({
 		borderRadius: 20,
 		width: '90%',
 		maxHeight: '80%',
+	},
+	modalContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: 'rgba(0,0,0,0.5)',
+		padding: 20,
 	},
 	modalTitle: {
 		fontSize: 20,

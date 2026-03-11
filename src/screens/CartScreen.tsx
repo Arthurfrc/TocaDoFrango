@@ -22,6 +22,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { COLORS } from '@/constants/colors';
 import { useMenu } from '@/context/MenuContext';
 import { useCart } from '@/context/CartContext';
+import { adminNumber } from '@/utils/whatsapp';
 import CustomAlert from '@/components/CustomAlert';
 
 interface AlertConfig {
@@ -92,6 +93,19 @@ export default function CartScreen({ navigation }: any) {
         }
         return items;
     };
+
+    const handleRemoveFromCart = (productId: string, productName: string) => {
+        showAlert(
+            'Remover do Carrinho',
+            `Tem certeza que deseja remover "${productName}" do carrinho?`,
+            () => {
+                removeFromCart(productId);
+            },
+            'Remover',
+            () => { },
+            'Cancelar'
+        );
+    }
 
     const showAlert = (
         title: string,
@@ -199,7 +213,7 @@ export default function CartScreen({ navigation }: any) {
 
             // ✅ AGORA SIM - MOSTRA CONFIRMAÇÃO ANTES DE ENVIAR
             const message = formatWhatsAppMessage();
-            const phoneNumber = APP_CONFIG.WHATSAPP_PHONE;
+            const phoneNumber = await adminNumber();
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
             showAlert(
@@ -320,7 +334,7 @@ export default function CartScreen({ navigation }: any) {
 
                                 <TouchableOpacity
                                     style={styles.removeButton}
-                                    onPress={() => removeFromCart(item.id)}
+                                    onPress={() => handleRemoveFromCart(item.id, item.name)}
                                 >
                                     <FontAwesome5 name="trash" size={16} color="#FF0000" />
                                 </TouchableOpacity>
