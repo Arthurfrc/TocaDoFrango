@@ -21,6 +21,7 @@ import { Product, Category } from '@/types';
 import { getCategoryName } from '@/utils';
 import { useMenu } from '@/context/MenuContext';
 import { menuService } from '@/services/menuService';
+import { configService } from '@/services/configService';
 
 import CustomAlert from '@/components/CustomAlert';
 import CustomModal from '@/components/CustomModal';
@@ -166,12 +167,8 @@ export default function AdminScreen({ navigation }: any) {
 
 	const loadAdminWhatsApp = async () => {
 		try {
-			const saved = await AsyncStorage.getItem('adminWhatsApp');
-			if (saved) {
-				setAdminWhatsApp(saved);
-			} else {
-				setAdminWhatsApp('');
-			}
+			const config = await configService.getConfig();
+			setAdminWhatsApp(config.whatsappNumber);
 		} catch (error) {
 			console.error('Erro ao carregar WhatsApp:', error);
 			setAdminWhatsApp('');
@@ -208,16 +205,27 @@ export default function AdminScreen({ navigation }: any) {
 			const cleanNumber = newNumber.replace(/\D/g, '');
 			// Adiciona +55 se não começar com 55
 			const fullNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
-			await AsyncStorage.setItem('adminWhatsApp', fullNumber);
+
+			await configService.saveWhatsAppNumber(fullNumber);
 			setAdminWhatsApp(fullNumber);
 		} catch (error) {
 			console.error('Erro ao salvar WhatsApp:', error);
+			Alert.alert('Erro', 'Não foi possível salvar o número do WhatsApp');
 		}
+
 	};
 
 	useEffect(() => {
 		loadAdminWhatsApp();
 	}, []);
+
+	useEffect(() => {
+		const unsubscribe = navigation.addListener('focus', () => {
+			loadAdminWhatsApp();
+		});
+
+		return unsubscribe;
+	}, [navigation]);
 
 	if (isLoading) {
 		return (
