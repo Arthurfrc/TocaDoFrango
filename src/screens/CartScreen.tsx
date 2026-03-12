@@ -318,7 +318,7 @@ export default function CartScreen({ navigation }: any) {
                             <View style={styles.quantityControls}>
                                 <TouchableOpacity
                                     style={styles.quantityButton}
-                                    onPress={() => updateQuantity(item.id, item.quantity - 1, products)}
+                                    onPress={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1, products) : handleRemoveFromCart(item.id, item.name)}
                                 >
                                     <Text style={styles.quantityButtonText}>-</Text>
                                 </TouchableOpacity>
