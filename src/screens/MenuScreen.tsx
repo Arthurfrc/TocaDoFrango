@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { COLORS } from "@/constants/colors";
 import { useMenu } from "@/context/MenuContext";
@@ -61,6 +62,14 @@ export default function MenuScreen({ navigation }: any) {
             }, 50);
         }
     };
+
+    // Fecha todas as categorias quando a tela ganha foco
+    useFocusEffect(
+        React.useCallback(() => {
+            setExpandedCategory(null);
+            return () => {};
+        }, [])
+    );
 
     const handleAddToCart = (productId: string) => {
         const product = products.find(p => p.id === productId);
