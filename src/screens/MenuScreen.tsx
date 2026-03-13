@@ -1,6 +1,6 @@
 // src/screens/MenuScreen.tsx
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 
 import { COLORS } from "@/constants/colors";
@@ -16,6 +16,10 @@ export default function MenuScreen({ navigation }: any) {
     const [alertConfig, setAlertConfig] = useState({ title: '', message: '' });
     const { products, categories } = useMenu();
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+    const scrollViewRef = useRef<ScrollView>(null);
+    const categoryRefs = useRef<{ [key: string]: View | null }>({});
+
     const menuByCategory = products
         .filter(product => product.available)
         .reduce((acc, product) => {
@@ -37,7 +41,25 @@ export default function MenuScreen({ navigation }: any) {
     };
 
     const toggleCategoryExpansion = (categoryName: string) => {
+        const isOpening = expandedCategory !== categoryName;
+
         setExpandedCategory(prev => prev === categoryName ? null : categoryName);
+
+        if (isOpening) {
+            // Pequeno delay para o layout renderizar antes de medir
+            setTimeout(() => {
+                const categoryView = categoryRefs.current[categoryName];
+                if (categoryView && scrollViewRef.current) {
+                    categoryView.measureLayout(
+                        scrollViewRef.current as any,
+                        (_x, y) => {
+                            scrollViewRef.current?.scrollTo({ y, animated: true });
+                        },
+                        () => {}
+                    );
+                }
+            }, 50);
+        }
     };
 
     const handleAddToCart = (productId: string) => {
@@ -55,7 +77,7 @@ export default function MenuScreen({ navigation }: any) {
     };
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView ref={scrollViewRef} style={styles.container}>
             <Text style={styles.title}>🍗 Cardápio</Text>
 
             {getTotalItems() > 0 && (
@@ -74,7 +96,11 @@ export default function MenuScreen({ navigation }: any) {
                 const isExpanded = expandedCategory === category;
 
                 return (
-                    <View key={category} style={styles.categorySection}>
+                    <View
+                        key={category}
+                        ref={ref => { categoryRefs.current[category] = ref; }}
+                        style={styles.categorySection}
+                    >
                         <TouchableOpacity
                             style={styles.categoryHeader}
                             onPress={() => toggleCategoryExpansion(category)}

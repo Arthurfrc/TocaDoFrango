@@ -1,6 +1,6 @@
 // src/screens/AdminScreen.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
 	View,
 	Text,
@@ -72,9 +72,12 @@ export default function AdminScreen({ navigation }: any) {
 	const [adminWhatsApp, setAdminWhatsApp] = useState('');
 	const [adminInputNumber, setAdminInputNumber] = useState('');
 
-	// Estados para expansão
 	const [categoriesExpanded, setCategoriesExpanded] = useState(true);
 	const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+	// Refs para scroll automático
+	const scrollViewRef = useRef<ScrollView>(null);
+	const categoryRefs = useRef<{ [key: string]: View | null }>({});
 
 	const openEditModal = (product?: Product, categoryId?: string) => {
 		setEditingProduct(product || null);
@@ -82,7 +85,6 @@ export default function AdminScreen({ navigation }: any) {
 		setModalVisible(true);
 	};
 
-	// Função helper
 	const showAlert = (
 		title: string,
 		message: string,
@@ -148,11 +150,9 @@ export default function AdminScreen({ navigation }: any) {
 				? `Atenção! Esta categoria contém ${categoryProducts.length} produto(s). Todos serão excluídos. Deseja continuar?`
 				: 'Tem certeza que deseja excluir esta categoria?',
 			() => {
-				// Excluir todos os produtos da categoria primeiro
 				categoryProducts.forEach(product => {
 					deleteProduct(product.id);
 				});
-				// Depois excluir a categoria
 				deleteCategory(categoryId);
 			},
 			() => { },
@@ -162,7 +162,24 @@ export default function AdminScreen({ navigation }: any) {
 	};
 
 	const toggleCategoryExpansion = (categoryId: string) => {
+		const isOpening = expandedCategory !== categoryId;
+
 		setExpandedCategory(prev => prev === categoryId ? null : categoryId);
+
+		if (isOpening) {
+			setTimeout(() => {
+				const categoryView = categoryRefs.current[categoryId];
+				if (categoryView && scrollViewRef.current) {
+					categoryView.measureLayout(
+						scrollViewRef.current as any,
+						(_x, y) => {
+							scrollViewRef.current?.scrollTo({ y, animated: true });
+						},
+						() => { }
+					);
+				}
+			}, 50);
+		}
 	};
 
 	const loadAdminWhatsApp = async () => {
@@ -176,13 +193,9 @@ export default function AdminScreen({ navigation }: any) {
 	};
 
 	const formatWhatsApp = (value: string) => {
-		// Remove todos os caracteres não numéricos
 		const cleanValue = value.replace(/\D/g, '');
-
-		// Limita a 11 dígitos (DDD + 9 dígitos)
 		const limitedValue = cleanValue.slice(0, 11);
 
-		// Aplica formatação (XX) XXXXX-XXXX
 		if (limitedValue.length <= 2) {
 			return limitedValue;
 		} else if (limitedValue.length <= 7) {
@@ -194,16 +207,13 @@ export default function AdminScreen({ navigation }: any) {
 
 	const getDisplayWhatsApp = () => {
 		if (!adminWhatsApp) return '';
-		// Remove o +55 para exibir no input
 		const without55 = adminWhatsApp.startsWith('55') ? adminWhatsApp.substring(2) : adminWhatsApp;
 		return formatWhatsApp(without55);
 	};
 
 	const saveAdminWhatsApp = async (newNumber: string) => {
 		try {
-			// Remove caracteres não numéricos e formatação
 			const cleanNumber = newNumber.replace(/\D/g, '');
-			// Adiciona +55 se não começar com 55
 			const fullNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
 
 			await configService.saveWhatsAppNumber(fullNumber);
@@ -212,7 +222,6 @@ export default function AdminScreen({ navigation }: any) {
 			console.error('Erro ao salvar WhatsApp:', error);
 			Alert.alert('Erro', 'Não foi possível salvar o número do WhatsApp');
 		}
-
 	};
 
 	useEffect(() => {
@@ -284,8 +293,7 @@ export default function AdminScreen({ navigation }: any) {
 				</View>
 			)}
 
-			<ScrollView style={styles.content}>
-				{/* Header Principal de Categorias */}
+			<ScrollView ref={scrollViewRef} style={styles.content}>
 				<View style={styles.sectionContainer}>
 					<TouchableOpacity
 						style={styles.sectionHeader}
@@ -308,7 +316,6 @@ export default function AdminScreen({ navigation }: any) {
 						</TouchableOpacity>
 					</TouchableOpacity>
 
-					{/* Categorias com Produtos Aninhados */}
 					{categoriesExpanded && (
 						<>
 							{categories.length === 0 ? (
@@ -322,8 +329,11 @@ export default function AdminScreen({ navigation }: any) {
 									const isExpanded = expandedCategory === category.id;
 
 									return (
-										<View key={category.id} style={styles.categoryContainer}>
-											{/* Header da Categoria */}
+										<View
+											key={category.id}
+											ref={ref => { categoryRefs.current[category.id] = ref; }}
+											style={styles.categoryContainer}
+										>
 											<TouchableOpacity
 												style={styles.categoryHeader}
 												onPress={() => toggleCategoryExpansion(category.id)}
@@ -372,7 +382,6 @@ export default function AdminScreen({ navigation }: any) {
 												</View>
 											</TouchableOpacity>
 
-											{/* Produtos da Categoria (se expandido) */}
 											{isExpanded && (
 												<View style={styles.productsList}>
 													{categoryProducts.length === 0 ? (
@@ -438,7 +447,7 @@ export default function AdminScreen({ navigation }: any) {
 				</View>
 			</ScrollView>
 
-			{/* Modal de Nova Categoria */}
+			{/* Modais - sem alterações */}
 			<CustomFormModal
 				visible={showCategoryModal}
 				title={editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
@@ -481,7 +490,6 @@ export default function AdminScreen({ navigation }: any) {
 				icon="📂"
 			/>
 
-			{/* Modal de Seleção de Categoria */}
 			<Modal
 				visible={showCategorySelector}
 				transparent={true}
@@ -526,7 +534,6 @@ export default function AdminScreen({ navigation }: any) {
 				</View>
 			</Modal>
 
-			{/* Modal de Produto */}
 			<CustomProductModal
 				visible={modalVisible}
 				product={editingProduct}
