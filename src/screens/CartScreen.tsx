@@ -39,14 +39,16 @@ export default function CartScreen({ navigation }: any) {
     const [showDeliveryOptions, setShowDeliveryOptions] = useState(false);
 
     const { cart,
+        addToCart,
         removeFromCart,
         updateQuantity,
         deliveryType,
         setDeliveryType,
         getDeliveryFee,
+        getDeliveryFeeValue,
         clearCart,
         decreaseStock,
-        checkStockAvailability,
+        checkStockAvailability
     } = useCart();
     const [loading, setLoading] = useState(false);
     const [customerInfo, setCustomerInfo] = useState({
@@ -138,7 +140,7 @@ export default function CartScreen({ navigation }: any) {
         let message = `🐔 *TOCA DO FRANGO - PEDIDO CONFIRMADO* 🐔`;
         message += `\n👤 *Cliente:* ${customerInfo.name}`;
         message += `\n📞 *Tel:* ${customerInfo.phone}`;
-        message += `\n🏍️ *Entrega:* ${deliveryType === 'retirada' ? 'Retirada no local' : `Delivery (+R$ ${APP_CONFIG.DELIVERY_FEE.toFixed(2)})`}`;
+        message += `\n🏍️ *Entrega:* ${deliveryType === 'retirada' ? 'Retirada no local' : `Delivery (+R$ ${getDeliveryFeeValue().toFixed(2)})`}`;
         if (deliveryType === 'entrega') {
             message += `\n📍 *Endereço:* ${customerInfo.address}`;
         }
@@ -175,7 +177,7 @@ export default function CartScreen({ navigation }: any) {
 
         try {
             // Verificar estoque ANTES de enviar
-            const stockCheck = await checkStockAvailability(cartItems);
+            const stockCheck = await checkStockAvailability(getCartItems());
 
             if (!stockCheck.available) {
                 showAlert(
@@ -225,7 +227,7 @@ export default function CartScreen({ navigation }: any) {
                         await Linking.openURL(whatsappUrl);
 
                         // Diminui estoque
-                        for (const item of cartItems) {
+                        for (const item of getCartItems()) {
                             if (item.hasStockControl) {
                                 await decreaseStock(item.id, products, item.quantity);
                             }
@@ -397,7 +399,7 @@ export default function CartScreen({ navigation }: any) {
                             onPress={() => setShowDeliveryOptions(true)}
                         >
                             <Text style={styles.deliveryText}>
-                                {deliveryType === 'retirada' ? '🏃 Retirada no local' : '🏍️ Delivery (+R$3,00)'}
+                                {deliveryType === 'retirada' ? '🏃 Retirada no local' : `🏍️ Delivery (+R$${getDeliveryFee().toFixed(2)})`}
                             </Text>
                             <FontAwesome5 name="chevron-down" size={16} color={COLORS.text} />
                         </TouchableOpacity>
@@ -479,7 +481,7 @@ export default function CartScreen({ navigation }: any) {
                                     setShowDeliveryOptions(false);
                                 }}
                             >
-                                <Text style={styles.paymentOptionText}>🏍️ Delivery (+R${APP_CONFIG.DELIVERY_FEE.toFixed(2)})</Text>
+                                <Text style={styles.paymentOptionText}>🏍️ Delivery (+R${getDeliveryFeeValue().toFixed(2)})</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity

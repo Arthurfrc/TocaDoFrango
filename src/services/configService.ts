@@ -3,6 +3,7 @@ import { db } from '@/config/firebase';
 
 export interface ConfigData {
     whatsappNumber: string;
+    deliveryFee: number;
     updatedAt: Date;
 }
 
@@ -22,6 +23,7 @@ export const configService = {
                 // Se não existir, retorna configuração padrão
                 return {
                     whatsappNumber: '5584999397770',
+                    deliveryFee: 3.00,
                     updatedAt: new Date()
                 };
             }
@@ -29,6 +31,7 @@ export const configService = {
             console.error('Erro ao buscar configurações:', error);
             return {
                 whatsappNumber: '5584999397770',
+                deliveryFee: 3.00,
                 updatedAt: new Date()
             };
         }
@@ -56,5 +59,9 @@ export const configService = {
     // Salvar apenas o número do WhatsApp
     async saveWhatsAppNumber(number: string): Promise<void> {
         await this.saveConfig({ whatsappNumber: number });
+    },
+
+    async saveDeliveryFee(fee: number): Promise<void> {
+        await this.saveConfig({ deliveryFee: fee });
     }
 };

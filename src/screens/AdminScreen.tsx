@@ -13,7 +13,7 @@ import {
 	Platform,
 	Alert
 } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome5, Fontisto } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { COLORS } from '@/constants/colors';
@@ -72,6 +72,10 @@ export default function AdminScreen({ navigation }: any) {
 	const [adminWhatsApp, setAdminWhatsApp] = useState('');
 	const [adminInputNumber, setAdminInputNumber] = useState('');
 
+	const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+	const [deliveryFee, setDeliveryFee] = useState(3.00);
+	const [inputDeliveryFee, setInputDeliveryFee] = useState('3,00');
+
 	const [categoriesExpanded, setCategoriesExpanded] = useState(true);
 	const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
@@ -128,6 +132,11 @@ export default function AdminScreen({ navigation }: any) {
 			id: 'whatsapp',
 			title: '📱 WhatsApp Admin',
 			onPress: () => setShowWhatsAppModal(true)
+		},
+		{
+			id: 'delivery',
+			title: '🚚 Taxa de Entrega',
+			onPress: () => setShowDeliveryModal(true)
 		},
 		{
 			id: 'privacy',
@@ -192,6 +201,31 @@ export default function AdminScreen({ navigation }: any) {
 		}
 	};
 
+	const loadDeliveryFee = async () => {
+		try {
+			const config = await configService.getConfig();
+			setDeliveryFee(config.deliveryFee);
+			setInputDeliveryFee(config.deliveryFee.toFixed(2).replace('.', ','));
+		} catch (error) {
+			console.error('Erro ao carregar frete:', error);
+			setDeliveryFee(3.00);
+			setInputDeliveryFee('3.00'.replace('.', ','));
+		}
+	};
+
+	const formatPrice = (value: string) => {
+		// Remove tudo que não é número
+		const cleanValue = value.replace(/\D/g, '');
+
+		// Converte para número e divide por 100 (para casas decimais)
+		const number = parseFloat(cleanValue) / 100;
+
+		// Formata com 2 casas decimais
+		if (isNaN(number)) return '0,00';
+
+		return number.toFixed(2).replace('.', ',');
+	};
+
 	const formatWhatsApp = (value: string) => {
 		const cleanValue = value.replace(/\D/g, '');
 		const limitedValue = cleanValue.slice(0, 11);
@@ -224,13 +258,33 @@ export default function AdminScreen({ navigation }: any) {
 		}
 	};
 
+	const saveDeliveryFee = async (newFee: string) => {
+		try {
+			// Converte "5,50" para 5.50
+			const fee = parseFloat(newFee);
+			if (isNaN(fee) || fee < 0) {
+				Alert.alert('Erro', 'Digite um valor válido para o frete');
+				return;
+			}
+
+			await configService.saveDeliveryFee(fee);
+			setDeliveryFee(fee);
+			setInputDeliveryFee(fee.toFixed(2).replace('.', ','));
+		} catch (error) {
+			console.error('Erro ao salvar frete:', error);
+			Alert.alert('Erro', 'Não foi possível salvar o valor do frete');
+		}
+	};
+
 	useEffect(() => {
 		loadAdminWhatsApp();
+		loadDeliveryFee();
 	}, []);
 
 	useEffect(() => {
 		const unsubscribe = navigation.addListener('focus', () => {
 			loadAdminWhatsApp();
+			loadDeliveryFee();
 		});
 
 		return unsubscribe;
@@ -265,7 +319,16 @@ export default function AdminScreen({ navigation }: any) {
 						setShowWhatsAppModal(true);
 					}}
 				>
-					<FontAwesome5 name="phone" size={24} color={COLORS.background} />
+					<Fontisto name="whatsapp" size={24} color={COLORS.background} />
+				</TouchableOpacity>
+				<TouchableOpacity
+					style={styles.whatsappButton}
+					onPress={() => {
+						setInputDeliveryFee(deliveryFee.toFixed(2).replace('.', ','));
+						setShowDeliveryModal(true);
+					}}
+				>
+					<FontAwesome5 name="cog" size={24} color={COLORS.background} />
 				</TouchableOpacity>
 			</View>
 
@@ -489,6 +552,59 @@ export default function AdminScreen({ navigation }: any) {
 				}}
 				icon="📂"
 			/>
+
+			<Modal
+				visible={showDeliveryModal}
+				transparent={true}
+				animationType="fade"
+				onRequestClose={() => setShowDeliveryModal(false)}
+			>
+				<View style={styles.modalOverlayFee}>
+					<View style={styles.modalContentFee}>
+						<Text style={styles.modalTitleFee}>🚚 Configurar Taxa de Entrega</Text>
+
+						<View style={styles.inputGroupFee}>
+							<Text style={styles.inputLabelFee}>
+								<FontAwesome5 name="money-bill-wave" size={14} color={COLORS.primary} /> Valor do Frete
+							</Text>
+							<View style={styles.priceContainerFee}>
+								<Text style={styles.pricePrefixFee}>R$</Text>
+								<TextInput
+									style={styles.priceInputFee}
+									placeholder="0,00"
+									placeholderTextColor="#999"
+									value={inputDeliveryFee}
+									onChangeText={(text) => setInputDeliveryFee(formatPrice(text))}
+									keyboardType="numeric"
+									maxLength={10}
+								/>
+							</View>
+						</View>
+
+						<View style={styles.modalActionsFee}>
+							<TouchableOpacity
+								style={[styles.modalButtonFee, styles.cancelButtonFee]}
+								onPress={() => {
+									setInputDeliveryFee(deliveryFee.toFixed(2));
+									setShowDeliveryModal(false);
+								}}
+							>
+								<Text style={styles.modalButtonTextCancelFee}>Cancelar</Text>
+							</TouchableOpacity>
+
+							<TouchableOpacity
+								style={[styles.modalButtonFee, styles.saveButtonFee]}
+								onPress={() => {
+									saveDeliveryFee(inputDeliveryFee);
+									setShowDeliveryModal(false);
+								}}
+							>
+								<Text style={styles.modalButtonTextConfirmFee}>Salvar</Text>
+							</TouchableOpacity>
+						</View>
+					</View>
+				</View>
+			</Modal>
 
 			<Modal
 				visible={showCategorySelector}
@@ -915,5 +1031,82 @@ const styles = StyleSheet.create({
 	syncButton: {
 		backgroundColor: COLORS.admin,
 		marginLeft: 10,
+	},
+	// Adicione estes estilos ao final do StyleSheet existente:
+
+	modalOverlayFee: {
+		flex: 1,
+		backgroundColor: 'rgba(0, 0, 0, 0.5)',
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	modalContentFee: {
+		backgroundColor: COLORS.background,
+		padding: 20,
+		borderRadius: 15,
+		width: '90%',
+		maxWidth: 350,
+	},
+	modalTitleFee: {
+		fontSize: 18,
+		fontWeight: 'bold',
+		color: COLORS.text,
+		marginBottom: 20,
+		textAlign: 'center',
+	},
+	inputGroupFee: {
+		marginBottom: 20,
+	},
+	inputLabelFee: {
+		fontSize: 16,
+		fontWeight: 'bold',
+		color: COLORS.text,
+		marginBottom: 8,
+	},
+	priceContainerFee: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		backgroundColor: '#fff',
+		// borderWidth: 1,
+		// borderColor: '#ddd',
+		borderRadius: 8,
+		padding: 12,
+	},
+	pricePrefixFee: {
+		fontSize: 32,
+		fontWeight: 'bold',
+		color: COLORS.primary,
+		marginRight: 8
+	},
+	priceInputFee: {
+		flex: 1,
+		fontSize: 42,
+		fontWeight: 'bold',
+		color: COLORS.text,
+	},
+	modalActionsFee: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		gap: 10,
+	},
+	modalButtonFee: {
+		flex: 1,
+		padding: 15,
+		borderRadius: 8,
+		alignItems: 'center',
+	},
+	cancelButtonFee: {
+		backgroundColor: '#E0E0E0',
+	},
+	saveButtonFee: {
+		backgroundColor: COLORS.primary,
+	},
+	modalButtonTextCancelFee: {
+		fontWeight: 'bold',
+		color: COLORS.text,
+	},
+	modalButtonTextConfirmFee: {
+		fontWeight: 'bold',
+		color: '#fff',
 	},
 });
