@@ -13,7 +13,7 @@ import {
 	Platform,
 	Alert
 } from 'react-native';
-import { FontAwesome5, Fontisto } from '@expo/vector-icons';
+import { FontAwesome5, Fontisto, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { COLORS } from '@/constants/colors';
@@ -78,6 +78,9 @@ export default function AdminScreen({ navigation }: any) {
 
 	const [categoriesExpanded, setCategoriesExpanded] = useState(true);
 	const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+	// Estado do menu dropdown do header
+	const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
 
 	// Refs para scroll automático
 	const scrollViewRef = useRef<ScrollView>(null);
@@ -214,15 +217,9 @@ export default function AdminScreen({ navigation }: any) {
 	};
 
 	const formatPrice = (value: string) => {
-		// Remove tudo que não é número
 		const cleanValue = value.replace(/\D/g, '');
-
-		// Converte para número e divide por 100 (para casas decimais)
 		const number = parseFloat(cleanValue) / 100;
-
-		// Formata com 2 casas decimais
 		if (isNaN(number)) return '0,00';
-
 		return number.toFixed(2).replace('.', ',');
 	};
 
@@ -260,7 +257,6 @@ export default function AdminScreen({ navigation }: any) {
 
 	const saveDeliveryFee = async (newFee: string) => {
 		try {
-			// Converte "5,50" para 5.50
 			const fee = parseFloat(newFee);
 			if (isNaN(fee) || fee < 0) {
 				Alert.alert('Erro', 'Digite um valor válido para o frete');
@@ -312,25 +308,67 @@ export default function AdminScreen({ navigation }: any) {
 						<Text style={styles.title}>Painel Admin</Text>
 					</View>
 				</View>
+
+				{/* Botão de toggle do menu */}
 				<TouchableOpacity
-					style={styles.whatsappButton}
-					onPress={() => {
-						setAdminInputNumber(getDisplayWhatsApp());
-						setShowWhatsAppModal(true);
-					}}
+					style={styles.menuToggleButton}
+					onPress={() => setHeaderMenuOpen(prev => !prev)}
 				>
-					<Fontisto name="whatsapp" size={24} color={COLORS.background} />
-				</TouchableOpacity>
-				<TouchableOpacity
-					style={styles.whatsappButton}
-					onPress={() => {
-						setInputDeliveryFee(deliveryFee.toFixed(2).replace('.', ','));
-						setShowDeliveryModal(true);
-					}}
-				>
-					<FontAwesome5 name="cog" size={24} color={COLORS.background} />
+					<MaterialIcons
+						name={headerMenuOpen ? 'menu-open' : 'menu-open'}
+						size={28}
+						color={COLORS.background}
+						style={{ transform: [{ scaleX: headerMenuOpen ? -1 : 1 }] }}
+					/>
 				</TouchableOpacity>
 			</View>
+
+			{/* Dropdown do menu */}
+			{headerMenuOpen && (
+				<>
+					{/* Overlay para fechar ao clicar fora */}
+					<TouchableOpacity
+						style={styles.menuOverlay}
+						activeOpacity={1}
+						onPress={() => setHeaderMenuOpen(false)}
+					/>
+					<View style={styles.dropdownMenu}>
+						<TouchableOpacity
+							style={styles.dropdownItem}
+							onPress={() => {
+								setHeaderMenuOpen(false);
+								setAdminInputNumber(getDisplayWhatsApp());
+								setShowWhatsAppModal(true);
+							}}
+						>
+							<Fontisto name="whatsapp" size={18} color={COLORS.primary} />
+							<Text style={styles.dropdownItemText}>WhatsApp</Text>
+						</TouchableOpacity>
+
+						<View style={styles.dropdownDivider} />
+
+						<TouchableOpacity
+							style={styles.dropdownItem}
+							onPress={() => {
+								setHeaderMenuOpen(false);
+								setInputDeliveryFee(deliveryFee.toFixed(2).replace('.', ','));
+								setShowDeliveryModal(true);
+							}}
+						>
+							<FontAwesome5 name="truck" size={18} color={COLORS.primary} />
+							<Text style={styles.dropdownItemText}>Taxa de frete</Text>
+						</TouchableOpacity>
+
+						<View style={styles.dropdownDivider} />
+
+						<TouchableOpacity style={styles.dropdownItem}>
+							<FontAwesome5 name="map-marked-alt" size={18} color={COLORS.primary} />
+							<Text style={styles.dropdownItemText}>Endereço</Text>
+						</TouchableOpacity>
+
+					</View>
+				</>
+			)}
 
 			{hasUnsavedChanges && (
 				<View style={styles.actionBar}>
@@ -510,7 +548,7 @@ export default function AdminScreen({ navigation }: any) {
 				</View>
 			</ScrollView>
 
-			{/* Modais - sem alterações */}
+			{/* Modais */}
 			<CustomFormModal
 				visible={showCategoryModal}
 				title={editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
@@ -724,11 +762,52 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'center',
+		zIndex: 10,
 	},
-	whatsappButton: {
+	menuToggleButton: {
 		padding: 8,
 		backgroundColor: 'rgba(255,255,255,0.2)',
 		borderRadius: 20,
+	},
+	menuOverlay: {
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		zIndex: 20,
+	},
+	dropdownMenu: {
+		position: 'absolute',
+		top: 72, // altura do header
+		right: 16,
+		backgroundColor: COLORS.background,
+		borderRadius: 12,
+		paddingVertical: 6,
+		minWidth: 200,
+		elevation: 8,
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.15,
+		shadowRadius: 8,
+		zIndex: 30,
+	},
+	dropdownItem: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 12,
+		paddingHorizontal: 18,
+		paddingVertical: 14,
+	},
+	dropdownItemText: {
+		fontSize: 15,
+		color: COLORS.text,
+		fontWeight: '500',
+	},
+	dropdownDivider: {
+		height: 1,
+		backgroundColor: '#EEEEEE',
+		marginHorizontal: 12,
 	},
 	title: {
 		fontSize: 24,
@@ -1032,8 +1111,6 @@ const styles = StyleSheet.create({
 		backgroundColor: COLORS.admin,
 		marginLeft: 10,
 	},
-	// Adicione estes estilos ao final do StyleSheet existente:
-
 	modalOverlayFee: {
 		flex: 1,
 		backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -1067,8 +1144,6 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		backgroundColor: '#fff',
-		// borderWidth: 1,
-		// borderColor: '#ddd',
 		borderRadius: 8,
 		padding: 12,
 	},
