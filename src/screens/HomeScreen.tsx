@@ -1,7 +1,7 @@
 // src/screens/HomeScreen.tsx
 
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, BackHandler, Alert, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Application from 'expo-application';
@@ -13,6 +13,7 @@ import CustomAlert from '@/components/CustomAlert';
 export default function HomeScreen({ navigation }: any) {
 
     const ADMIN_DEVICE = '1234';
+    const [showExitAlert, setShowExitAlert] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [logoPress, setLogoPress] = useState(0);
     const [adminUnlocked, setAdminUnlocked] = useState(false);
@@ -132,6 +133,13 @@ export default function HomeScreen({ navigation }: any) {
                         <Text style={styles.buttonText}>Configurações</Text>
                     </TouchableOpacity>
                 )}
+                <TouchableOpacity
+                    style={[styles.button, styles.exitButton]}
+                    onPress={() => setShowExitAlert(true)}
+                >
+                    <MaterialIcons name="exit-to-app" size={24} color="white" />
+                    <Text style={styles.buttonText}>Sair do App</Text>
+                </TouchableOpacity>
             </View>
 
             {/* Informações */}
@@ -175,6 +183,7 @@ export default function HomeScreen({ navigation }: any) {
                 >
                     <MaterialIcons name="code" size={16} color={COLORS.text} />
                 </TouchableOpacity>
+
                 <CustomAlert
                     visible={showDevAlert}
                     title="Sobre o Desenvolvedor"
@@ -202,6 +211,24 @@ export default function HomeScreen({ navigation }: any) {
                     setShowPasswordModal(false);
                 }}
                 onCancel={() => setShowPasswordModal(false)}
+            />
+            <CustomAlert
+                visible={showExitAlert}
+                title="Sair do Aplicativo"
+                message="Tem certeza que deseja sair do Toca do Frango?"
+                confirmText="Sair"
+                cancelText="Cancelar"
+                onConfirm={() => {
+                    if (Platform.OS === 'android') {
+                        BackHandler.exitApp();
+                    } else {
+                        Alert.alert(
+                            'iOS',
+                            'Para fechar o aplicativo, arraste para cima ou pressione o botão home.'
+                        );
+                    }
+                }}
+                onCancel={() => setShowExitAlert(false)}
             />
         </ScrollView>
     );
@@ -315,5 +342,12 @@ const styles = StyleSheet.create({
         color: COLORS.text,
         fontWeight: 'bold',
         opacity: 0.6,
+    },
+    exitButton: {
+        backgroundColor: '#FF5252',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 15
     },
 });
