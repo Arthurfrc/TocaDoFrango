@@ -3,10 +3,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, BackHandler, Alert, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Fontisto, MaterialIcons } from '@expo/vector-icons';
 import * as Application from 'expo-application';
 
 import { COLORS } from '@/constants/colors';
+import { deliveryService, DeliveryZone } from '@/services/deliveryService';
 import InputAlert from '@/components/InputAlert';
 import CustomAlert from '@/components/CustomAlert';
 
@@ -17,6 +18,7 @@ export default function HomeScreen({ navigation }: any) {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [logoPress, setLogoPress] = useState(0);
     const [adminUnlocked, setAdminUnlocked] = useState(false);
+    const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
 
     const [showDevAlert, setShowDevAlert] = useState(false);
 
@@ -36,6 +38,7 @@ export default function HomeScreen({ navigation }: any) {
             }
         }
         checkId();
+        loadDeliveryZones();
 
         // Cleanup do timer quando o componente desmontar
         return () => {
@@ -44,6 +47,16 @@ export default function HomeScreen({ navigation }: any) {
             }
         };
     }, []);
+
+    const loadDeliveryZones = async () => {
+        try {
+            const zones = await deliveryService.getActiveDeliveryZones();
+            setDeliveryZones(zones);
+        } catch (error) {
+            console.error('Erro ao carregar zonas:', error);
+        }
+    };
+
 
     const handleLogoPress = async () => {
         // Se já desbloqueou, não faz nada
@@ -151,8 +164,15 @@ export default function HomeScreen({ navigation }: any) {
                 <Text style={styles.infoText}>Rua da Consolação, 900</Text>
                 <Text style={styles.infoText}>Emaús - Parnamirim/RN</Text>
 
-                <Text style={styles.sectionTitle}>📞 Contato</Text>
+                <Text style={styles.sectionTitle}>
+                    <Fontisto name="whatsapp" size={18} color={COLORS.primary} /> Contato
+                </Text>
                 <Text style={styles.infoText}>(84) 98822-2025</Text>
+
+                <Text style={styles.sectionTitle}>🚚 Delivery</Text>
+                <Text style={styles.infoText}>
+                    Entrega para {deliveryZones.length} bairros disponíveis
+                </Text>
             </View>
             <View style={styles.quickActions}>
                 <TouchableOpacity
@@ -349,5 +369,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 15
+    },
+    sectionTitleText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.text,
+        marginLeft: 8,
     },
 });

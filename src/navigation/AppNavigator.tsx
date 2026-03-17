@@ -12,6 +12,7 @@ import CartScreen from '@/screens/CartScreen';
 import AdminScreen from '@/screens/AdminScreen';
 import PrivacyPolicyScreen from '@/screens/PrivacyPolicyScreen';
 import TermsOfServiceScreen from '@/screens/TermsOfServiceScreen';
+import DeliveryZonesScreen from '@/screens/DeliveryZonesScreen';
 // import OrdersScreen from '@/screens/OrdersScreen';
 
 const Stack = createStackNavigator();
@@ -71,6 +72,11 @@ export default function AppNavigator() {
                 <Stack.Screen
                     name="TermsOfService"
                     component={TermsOfServiceScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="DeliveryZones"
+                    component={DeliveryZonesScreen}
                     options={{ headerShown: false }}
                 />
             </Stack.Navigator>
