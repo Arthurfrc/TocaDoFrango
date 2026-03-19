@@ -1,11 +1,10 @@
 // src/context/CartContext.tsx
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { APP_CONFIG } from '@/config/app';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Product } from '@/types';
 import { menuService } from '@/services/menuService';
 import CustomAlert from '@/components/CustomAlert';
-import { configService } from '@/services/configService';
+import { DeliveryZone } from '@/services/deliveryService';
 
 interface CartContextType {
     cart: { [key: string]: number };
@@ -16,9 +15,12 @@ interface CartContextType {
     deliveryType: 'entrega' | 'retirada';
     setDeliveryType: (type: 'entrega' | 'retirada') => void;
     getDeliveryFee: () => number;
-    getDeliveryFeeValue: () => number;
     decreaseStock: (productId: string, products: Product[], quantity?: number) => Promise<void>;
     checkStockAvailability: (cartItems: any[]) => Promise<{ available: boolean, message?: string }>;
+    selectedDeliveryZone: DeliveryZone | null;
+    setSelectedDeliveryZone: (zone: DeliveryZone | null) => void;
+    selectedDeliveryZoneId: string | null;
+    setSelectedDeliveryZoneId: (zoneId: string | null) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -26,7 +28,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
     const [cart, setCart] = useState<{ [key: string]: number }>({});
     const [deliveryType, setDeliveryType] = useState<'entrega' | 'retirada'>('retirada');
-    const [deliveryFee, setDeliveryFee] = useState(3.00);
+    const [selectedDeliveryZone, setSelectedDeliveryZone] = useState<DeliveryZone | null>(null);
+    const [selectedDeliveryZoneId, setSelectedDeliveryZoneId] = useState<string | null>(null);
 
     const [alertVisible, setAlertVisible] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ title: '', message: '' });
@@ -75,12 +78,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
 
     const getDeliveryFee = () => {
-        const fee = deliveryType === 'entrega' ? (deliveryFee || 0) : 0;
-        return isNaN(fee) ? 0 : fee;
-    };
-
-    const getDeliveryFeeValue = () => {
-        return (deliveryFee || 0);
+        if (deliveryType === 'retirada') return 0;
+        if (selectedDeliveryZone) return selectedDeliveryZone.price;
+        return 0;
     };
 
     const checkStockAvailability = async (cartItems: any[]): Promise<{ available: boolean, message?: string }> => {
@@ -118,10 +118,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
         return { available: true };
     };
-    const getTotalWithDelivery = () => {
-        // TODO: Calculate total with delivery fee
-        return 0;
-    };
 
     const removeFromCart = (productId: string) => {
         setCart(prev => {
@@ -132,6 +128,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
 
     const updateQuantity = (productId: string, quantity: number, products: Product[]) => {
+        
         if (quantity <= 0) {
             removeFromCart(productId);
         } else {
@@ -155,18 +152,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setCart({});
     };
 
-    useEffect(() => {
-        const loadDeliveryFee = async () => {
-            try {
-                const config = await configService.getConfig();
-                setDeliveryFee(config.deliveryFee);
-            } catch (error) {
-                console.error('Erro ao carregar frete: ', error);
-            }
-        }
-        loadDeliveryFee();
-    }, []);
-
     return (
         <CartContext.Provider value={{
             cart,
@@ -177,9 +162,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
             deliveryType,
             setDeliveryType,
             getDeliveryFee,
-            getDeliveryFeeValue,
             decreaseStock,
-            checkStockAvailability
+            checkStockAvailability,
+            selectedDeliveryZone,
+            setSelectedDeliveryZone,
+            selectedDeliveryZoneId,
+            setSelectedDeliveryZoneId
         }}>
             {children}
             <CustomAlert

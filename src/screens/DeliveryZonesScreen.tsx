@@ -157,7 +157,13 @@ export default function DeliveryZonesScreen({ navigation }: any) {
             await deliveryService.toggleDeliveryZone(zone.id!, !zone.active);
             loadZones();
         } catch (error) {
-            Alert.alert('Erro', 'Não foi possível atualizar');
+            showAlert(
+                '❌ Erro',
+                'Não foi possível atualizar',
+                () => { },
+                () => { },
+                'OK'
+            );
         }
     };
 

@@ -1,6 +1,6 @@
 // src/screens/CartScreen.tsx
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { APP_CONFIG } from '@/config/app';
@@ -11,10 +11,10 @@ import {
     ScrollView,
     TouchableOpacity,
     TextInput,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     Linking,
+    Pressable,
     Modal
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -24,6 +24,7 @@ import { useMenu } from '@/context/MenuContext';
 import { useCart } from '@/context/CartContext';
 import { adminNumber } from '@/utils/whatsapp';
 import CustomAlert from '@/components/CustomAlert';
+import { deliveryService, DeliveryZone } from '@/services/deliveryService';
 
 interface AlertConfig {
     title: string;
@@ -37,19 +38,26 @@ interface AlertConfig {
 export default function CartScreen({ navigation }: any) {
     const [showPaymentOptions, setShowPaymentOptions] = useState(false);
     const [showDeliveryOptions, setShowDeliveryOptions] = useState(false);
+    const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
+    const [showZoneSelector, setShowZoneSelector] = useState(false);
 
-    const { cart,
+    const {
+        cart,
         addToCart,
         removeFromCart,
         updateQuantity,
         deliveryType,
         setDeliveryType,
         getDeliveryFee,
-        getDeliveryFeeValue,
         clearCart,
         decreaseStock,
-        checkStockAvailability
+        checkStockAvailability,
+        selectedDeliveryZone,
+        setSelectedDeliveryZone,
+        selectedDeliveryZoneId,
+        setSelectedDeliveryZoneId
     } = useCart();
+
     const [loading, setLoading] = useState(false);
     const [customerInfo, setCustomerInfo] = useState({
         name: '',
@@ -68,46 +76,67 @@ export default function CartScreen({ navigation }: any) {
 
     const { products } = useMenu();
 
-    const getCartItems = () => {
-        const items = [];
-        const unavailableItems = [];
+    // ✅ FIX 1: useCallback retorna uma função estável e reutilizável
+    const getCartItems = useCallback(() => {
+        return Object.entries(cart || {})
+            .map(([productId, quantity]) => {
+                const product = products.find(p => p.id === productId);
+                if (product && product.available) {
+                    return { ...product, quantity: quantity as number };
+                }
+                return null;
+            })
+            .filter(Boolean) as (typeof products[0] & { quantity: number })[];
+    }, [cart, products]);
 
-        for (const [productId, quantity] of Object.entries(cart || {})) {
-            const product = products.find(p => p.id === productId);
-            if (product && product.available) { // ← SÓ SE DISPONÍVEL
-                items.push({
-                    ...product,
-                    quantity: quantity as number
-                });
-            } else if (product) {
-                unavailableItems.push(product.name);
-            }
-        }
+    // ✅ FIX 2: cartItems é o valor memoizado — usado em todo o componente
+    const cartItems = useMemo(() => getCartItems(), [getCartItems]);
+
+    // ✅ FIX 3: side effect de alerta separado em useEffect
+    useEffect(() => {
+        const unavailableItems = Object.entries(cart || {})
+            .map(([productId]) => products.find(p => p.id === productId))
+            .filter(product => product && !product.available)
+            .map(product => product!.name);
 
         if (unavailableItems.length > 0) {
             showAlert(
                 '⚠️ Produtos Indisponíveis',
-                `Os seguintes produtos estão sem estoque no momento:\n
-                ${unavailableItems.join('')}`,
+                `Os seguintes produtos estão sem estoque no momento:\n${unavailableItems.join(', ')}`,
                 () => { },
                 'OK'
             );
         }
-        return items;
+    }, [cart, products]);
+
+    // ✅ FIX 4: getTotal usa cartItems (valor), não getCartItems() (chamada)
+    const getTotal = useMemo(() => {
+        const itemsTotal = cartItems.reduce(
+            (total, item) => total + item.price * item.quantity,
+            0
+        );
+        return itemsTotal + getDeliveryFee();
+    }, [cartItems, deliveryType, selectedDeliveryZone]);
+
+    const loadDeliveryZones = async () => {
+        try {
+            const zones = await deliveryService.getActiveDeliveryZones();
+            setDeliveryZones(zones);
+        } catch (error) {
+            console.error('Erro ao carregar zonas:', error);
+        }
     };
 
     const handleRemoveFromCart = (productId: string, productName: string) => {
         showAlert(
             'Remover do Carrinho',
             `Tem certeza que deseja remover "${productName}" do carrinho?`,
-            () => {
-                removeFromCart(productId);
-            },
+            () => { removeFromCart(productId); },
             'Remover',
             () => { },
             'Cancelar'
         );
-    }
+    };
 
     const showAlert = (
         title: string,
@@ -135,23 +164,24 @@ export default function CartScreen({ navigation }: any) {
     };
 
     const formatWhatsAppMessage = () => {
-        const items = getCartItems();
-
+        // ✅ FIX 5: usa cartItems (valor) em vez de getCartItems()
         let message = `🐔 *TOCA DO FRANGO - PEDIDO CONFIRMADO* 🐔`;
         message += `\n👤 *Cliente:* ${customerInfo.name}`;
         message += `\n📞 *Tel:* ${customerInfo.phone}`;
-        message += `\n🏍️ *Entrega:* ${deliveryType === 'retirada' ? 'Retirada no local' : `Delivery (+R$ ${getDeliveryFeeValue().toFixed(2)})`}`;
+        message += `\n🏍️ *Entrega:* ${deliveryType === 'retirada'
+            ? 'Retirada no local'
+            : `Delivery - ${selectedDeliveryZone?.name || 'Selecione um bairro'} (+R$ ${getDeliveryFee().toFixed(2)})`
+            }`;
+
         if (deliveryType === 'entrega') {
             message += `\n📍 *Endereço:* ${customerInfo.address}`;
         }
         message += `\n💳 *Pagamento:* ${customerInfo.paymentMethod}`;
-
         message += `\n📋 *PEDIDO*\n`;
         message += `${'─'.repeat(20)}`;
 
-        items.forEach((item, index) => {
-            message += `\n${index + 1}. ${item.name} - ${item.quantity}x = R$ ${(item.price * item.quantity).toFixed(2)}
-`;
+        cartItems.forEach((item, index) => {
+            message += `\n${index + 1}. ${item.name} - ${item.quantity}x = R$ ${(item.price * item.quantity).toFixed(2)}\n`;
         });
 
         if (getDeliveryFee() > 0) {
@@ -176,20 +206,24 @@ export default function CartScreen({ navigation }: any) {
         setLoading(true);
 
         try {
-            // Verificar estoque ANTES de enviar
-            const stockCheck = await checkStockAvailability(getCartItems());
+            // ✅ FIX 6: usa cartItems (valor) em vez de getCartItems()
+            const stockCheck = await checkStockAvailability(cartItems);
 
             if (!stockCheck.available) {
                 showAlert(
                     'Estoque Insuficiente',
                     stockCheck.message || 'Estoque insuficiente para alguns itens',
-                    () => { }, 'OK');
+                    () => { },
+                    'OK'
+                );
                 setLoading(false);
                 return;
             }
 
-            // Validações dos dados do cliente
-            if (!customerInfo.name || !customerInfo.phone || !customerInfo.paymentMethod ||
+            if (
+                !customerInfo.name ||
+                !customerInfo.phone ||
+                !customerInfo.paymentMethod ||
                 (deliveryType === 'entrega' && !customerInfo.address)
             ) {
                 showAlert(
@@ -213,7 +247,6 @@ export default function CartScreen({ navigation }: any) {
                 return;
             }
 
-            // ✅ AGORA SIM - MOSTRA CONFIRMAÇÃO ANTES DE ENVIAR
             const message = formatWhatsAppMessage();
             const phoneNumber = await adminNumber();
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
@@ -222,12 +255,11 @@ export default function CartScreen({ navigation }: any) {
                 '📱 Enviar Pedido',
                 'Deseja enviar este pedido para o WhatsApp?',
                 async () => {
-                    // SÓ EXECUTA SE CLICAR "ENVIAR"
                     try {
                         await Linking.openURL(whatsappUrl);
 
-                        // Diminui estoque
-                        for (const item of getCartItems()) {
+                        // ✅ FIX 7: usa cartItems (valor) em vez de getCartItems()
+                        for (const item of cartItems) {
                             if (item.hasStockControl) {
                                 await decreaseStock(item.id, products, item.quantity);
                             }
@@ -251,7 +283,7 @@ export default function CartScreen({ navigation }: any) {
                     }
                 },
                 'ENVIAR',
-                () => { }, // onCancel - apenas fecha
+                () => { },
                 'CANCELAR'
             );
 
@@ -262,13 +294,6 @@ export default function CartScreen({ navigation }: any) {
             setLoading(false);
         }
     };
-
-    const cartItems = useMemo(() => getCartItems(), [cart, products]);
-
-    const getTotal = useMemo(() => {
-        const itemsTotal = getCartItems().reduce((total, item) => total + (item.price * item.quantity), 0);
-        return itemsTotal + getDeliveryFee();
-    }, [cartItems, deliveryType]);
 
     const formatPhone = (text: string) => {
         const cleaned = text.replace(/\D/g, '');
@@ -281,7 +306,11 @@ export default function CartScreen({ navigation }: any) {
         } else {
             return `(${limited.slice(0, 2)}) ${limited.slice(2, 7)}-${limited.slice(7)}`;
         }
-    }
+    };
+
+    useEffect(() => {
+        loadDeliveryZones();
+    }, []);
 
     if (cartItems.length === 0) {
         return (
@@ -299,10 +328,16 @@ export default function CartScreen({ navigation }: any) {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            // behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior='padding'
+            keyboardVerticalOffset={Platform.OS === 'android' ? 5 : 0}
             style={styles.container}
         >
-            <ScrollView style={styles.scrollView}>
+            <ScrollView
+                style={styles.scrollView}
+                keyboardShouldPersistTaps='handled'
+                showsVerticalScrollIndicator={false}
+            >
                 <Text style={styles.title}>🛒 Meu Pedido</Text>
 
                 {/* Itens do Carrinho */}
@@ -316,11 +351,14 @@ export default function CartScreen({ navigation }: any) {
                                 </Text>
                             </View>
 
-                            {/* CONTROLES DE QUANTIDADE */}
                             <View style={styles.quantityControls}>
                                 <TouchableOpacity
                                     style={styles.quantityButton}
-                                    onPress={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1, products) : handleRemoveFromCart(item.id, item.name)}
+                                    onPress={() =>
+                                        item.quantity > 1
+                                            ? updateQuantity(item.id, item.quantity - 1, products)
+                                            : handleRemoveFromCart(item.id, item.name)
+                                    }
                                 >
                                     <Text style={styles.quantityButtonText}>-</Text>
                                 </TouchableOpacity>
@@ -361,7 +399,7 @@ export default function CartScreen({ navigation }: any) {
                             style={styles.input}
                             value={customerInfo.name}
                             onChangeText={(text) => setCustomerInfo({ ...customerInfo, name: text })}
-                            autoCapitalize='words'
+                            autoCapitalize="words"
                         />
                     </View>
 
@@ -374,7 +412,7 @@ export default function CartScreen({ navigation }: any) {
                                 const formatted = formatPhone(text);
                                 setCustomerInfo({ ...customerInfo, phone: formatted });
                             }}
-                            placeholder='(00) 00000-0000'
+                            placeholder="(00) 00000-0000"
                             keyboardType="phone-pad"
                             maxLength={15}
                         />
@@ -392,6 +430,7 @@ export default function CartScreen({ navigation }: any) {
                             <FontAwesome5 name="chevron-down" size={16} color={COLORS.text} />
                         </TouchableOpacity>
                     </View>
+
                     <View style={styles.inputGroup}>
                         <Text style={styles.inputLabel}>Tipo de entrega:</Text>
                         <TouchableOpacity
@@ -399,11 +438,14 @@ export default function CartScreen({ navigation }: any) {
                             onPress={() => setShowDeliveryOptions(true)}
                         >
                             <Text style={styles.deliveryText}>
-                                {deliveryType === 'retirada' ? '🏃 Retirada no local' : `🏍️ Delivery (+R$${getDeliveryFee().toFixed(2)})`}
+                                {deliveryType === 'retirada'
+                                    ? '🏃 Retirada no local'
+                                    : `🏍️ Delivery - ${selectedDeliveryZone?.name || 'Selecione um bairro'} (+R$${getDeliveryFee().toFixed(2)})`}
                             </Text>
                             <FontAwesome5 name="chevron-down" size={16} color={COLORS.text} />
                         </TouchableOpacity>
                     </View>
+
                     {deliveryType === 'entrega' && (
                         <View style={styles.inputGroup}>
                             <Text style={styles.inputLabel}>Endereço de entrega:</Text>
@@ -416,7 +458,6 @@ export default function CartScreen({ navigation }: any) {
                             />
                         </View>
                     )}
-
                 </View>
 
                 {/* Modal de seleção de pagamento */}
@@ -426,7 +467,10 @@ export default function CartScreen({ navigation }: any) {
                     animationType="fade"
                     onRequestClose={() => setShowPaymentOptions(false)}
                 >
-                    <View style={styles.paymentModalOverlay}>
+                    <Pressable
+                        style={styles.paymentModalOverlay}
+                        onPress={() => { setShowPaymentOptions(false) }}
+                    >
                         <View style={styles.paymentModalContent}>
                             <Text style={styles.paymentModalTitle}>Forma de Pagamento</Text>
 
@@ -450,7 +494,7 @@ export default function CartScreen({ navigation }: any) {
                                 <Text style={styles.paymentCancelText}>Cancelar</Text>
                             </TouchableOpacity>
                         </View>
-                    </View>
+                    </Pressable>
                 </Modal>
 
                 {/* Modal de seleção de entrega */}
@@ -460,7 +504,12 @@ export default function CartScreen({ navigation }: any) {
                     animationType="fade"
                     onRequestClose={() => setShowDeliveryOptions(false)}
                 >
-                    <View style={styles.paymentModalOverlay}>
+                    <Pressable
+                        style={styles.paymentModalOverlay}
+                        onPress={() => { 
+                            setShowDeliveryOptions(false);
+                         }}
+                    >
                         <View style={styles.paymentModalContent}>
                             <Text style={styles.paymentModalTitle}>Tipo de Entrega</Text>
 
@@ -477,11 +526,11 @@ export default function CartScreen({ navigation }: any) {
                             <TouchableOpacity
                                 style={styles.paymentOption}
                                 onPress={() => {
-                                    setDeliveryType('entrega');
                                     setShowDeliveryOptions(false);
+                                    setShowZoneSelector(true);
                                 }}
                             >
-                                <Text style={styles.paymentOptionText}>🏍️ Delivery (+R${getDeliveryFeeValue().toFixed(2)})</Text>
+                                <Text style={styles.paymentOptionText}>🏍️ Delivery</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -491,7 +540,54 @@ export default function CartScreen({ navigation }: any) {
                                 <Text style={styles.paymentCancelText}>Cancelar</Text>
                             </TouchableOpacity>
                         </View>
-                    </View>
+                    </Pressable>
+                </Modal>
+
+                {/* Modal de seleção de zona de entrega */}
+                <Modal
+                    visible={showZoneSelector}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={() => setShowZoneSelector(false)}
+                >
+                    <Pressable
+                        style={styles.paymentModalOverlay}
+                        onPress={() => {
+                            setShowZoneSelector(false);
+                            setShowDeliveryOptions(true)
+                        }}
+                    >
+                        <View style={styles.paymentModalContent}>
+                            <Text style={styles.paymentModalTitle}>📍 Selecione seu Bairro</Text>
+
+                            <ScrollView style={{ maxHeight: 300 }}>
+                                {deliveryZones.map((zone) => (
+                                    <TouchableOpacity
+                                        key={zone.id}
+                                        style={[
+                                            styles.paymentOption,
+                                            selectedDeliveryZone?.id === zone.id && styles.selectedOption
+                                        ]}
+                                        onPress={() => {
+                                            setSelectedDeliveryZone(zone);
+                                            setSelectedDeliveryZoneId(zone.id || null);
+                                            setDeliveryType('entrega');
+                                            setShowZoneSelector(false);
+                                        }}
+                                    >
+                                        <Text style={styles.paymentOptionText}>{zone.name}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+
+                            <TouchableOpacity
+                                style={styles.paymentCancel}
+                                onPress={() => setShowZoneSelector(false)}
+                            >
+                                <Text style={styles.paymentCancelText}>Cancelar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </Pressable>
                 </Modal>
 
                 {/* Botão Enviar */}
@@ -500,6 +596,7 @@ export default function CartScreen({ navigation }: any) {
                     <Text style={styles.sendButtonText}>Enviar para WhatsApp</Text>
                 </TouchableOpacity>
             </ScrollView>
+
             <CustomAlert
                 visible={alertVisible}
                 title={alertConfig.title}
@@ -509,7 +606,7 @@ export default function CartScreen({ navigation }: any) {
                 onCancel={() => setAlertVisible(false)}
                 cancelText={alertConfig.cancelText}
             />
-        </KeyboardAvoidingView >
+        </KeyboardAvoidingView>
     );
 }
 
@@ -517,7 +614,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
-        // padding: 20,
     },
     scrollView: {
         flex: 1,
@@ -734,5 +830,10 @@ const styles = StyleSheet.create({
     deliveryText: {
         fontSize: 16,
         color: COLORS.text,
+    },
+    selectedOption: {
+        backgroundColor: COLORS.selectOption,
+        borderWidth: 2,
+        borderColor: COLORS.selectOption,
     },
 });

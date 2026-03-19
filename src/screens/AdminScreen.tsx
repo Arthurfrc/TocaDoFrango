@@ -27,6 +27,7 @@ import CustomAlert from '@/components/CustomAlert';
 import CustomModal from '@/components/CustomModal';
 import CustomFormModal from '@/components/CustomFormModal';
 import CustomProductModal from '@/components/CustomProductModal';
+import MultipleModal from '@/components/MultipleModal';
 
 import { adminNumber } from '@/utils/whatsapp';
 
@@ -57,6 +58,15 @@ export default function AdminScreen({ navigation }: any) {
 		onCancel: () => { },
 		confirmText: 'Confirmar',
 		cancelText: undefined as string | undefined,
+	});
+
+	const [showAddressModal, setShowAddressModal] = useState(false);
+	const [addressForm, setAddressForm] = useState({
+		rua: '',
+		numero: '',
+		bairro: '',
+		cidade: '',
+		estado: '',
 	});
 
 	const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -239,6 +249,13 @@ export default function AdminScreen({ navigation }: any) {
 		}
 	};
 
+	const saveAddress = () => {
+		const { rua, numero, bairro, cidade, estado } = addressForm;
+		const formatted = `${rua}, ${numero} - ${bairro} - ${cidade} / ${estado.toUpperCase()}`;
+		console.log('Endereço:', formatted);
+		setShowAddressModal(false);
+	};
+
 	useEffect(() => {
 		loadAdminWhatsApp();
 	}, []);
@@ -324,38 +341,47 @@ export default function AdminScreen({ navigation }: any) {
 
 						<View style={styles.dropdownDivider} />
 
-						<TouchableOpacity style={styles.dropdownItem}>
+						{/* <TouchableOpacity
+							style={styles.dropdownItem}
+							onPress={() => {
+								setHeaderMenuOpen(false);
+								setShowAddressModal(true);
+							}}
+						>
 							<FontAwesome5 name="map-marked-alt" size={18} color={COLORS.primary} />
 							<Text style={styles.dropdownItemText}>Endereço</Text>
-						</TouchableOpacity>
+						</TouchableOpacity> */}
 
 					</View>
 				</>
-			)}
+			)
+			}
 
-			{hasUnsavedChanges && (
-				<View style={styles.actionBar}>
-					<TouchableOpacity
-						style={[styles.actionBarButton, styles.discardButton]}
-						onPress={discardChanges}
-						disabled={isPublishing}
-					>
-						<FontAwesome5 name="undo" size={16} color={COLORS.background} />
-						<Text style={styles.actionBarText}>Descartar</Text>
-					</TouchableOpacity>
+			{
+				hasUnsavedChanges && (
+					<View style={styles.actionBar}>
+						<TouchableOpacity
+							style={[styles.actionBarButton, styles.discardButton]}
+							onPress={discardChanges}
+							disabled={isPublishing}
+						>
+							<FontAwesome5 name="undo" size={16} color={COLORS.background} />
+							<Text style={styles.actionBarText}>Descartar</Text>
+						</TouchableOpacity>
 
-					<TouchableOpacity
-						style={[styles.actionBarButton, styles.publishButton, isPublishing && styles.publishButtonDisabled]}
-						onPress={publishChanges}
-						disabled={isPublishing}
-					>
-						<FontAwesome5 name="cloud-upload-alt" size={16} color={COLORS.background} />
-						<Text style={styles.actionBarText}>
-							{isPublishing ? 'Publicando...' : 'Publicar'}
-						</Text>
-					</TouchableOpacity>
-				</View>
-			)}
+						<TouchableOpacity
+							style={[styles.actionBarButton, styles.publishButton, isPublishing && styles.publishButtonDisabled]}
+							onPress={publishChanges}
+							disabled={isPublishing}
+						>
+							<FontAwesome5 name="cloud-upload-alt" size={16} color={COLORS.background} />
+							<Text style={styles.actionBarText}>
+								{isPublishing ? 'Publicando...' : 'Publicar'}
+							</Text>
+						</TouchableOpacity>
+					</View>
+				)
+			}
 
 			<ScrollView ref={scrollViewRef} style={styles.content}>
 				<View style={styles.sectionContainer}>
@@ -598,6 +624,21 @@ export default function AdminScreen({ navigation }: any) {
 				</View>
 			</Modal>
 
+			<MultipleModal
+				visible={showAddressModal}
+				title="📍 Endereço do Estabelecimento"
+				inputs={[
+					{ id: 'rua', label: 'Rua', placeholder: '----------------', value: addressForm.rua, onChangeText: (t) => setAddressForm({ ...addressForm, rua: t }), row: 1, flex: 7 },
+					{ id: 'numero', label: 'Nº', placeholder: '---', value: addressForm.numero, onChangeText: (t) => setAddressForm({ ...addressForm, numero: t }), row: 1, flex: 3, keyboardType: 'numeric', textAlign: 'center' },
+					{ id: 'bairro', label: 'Bairro', placeholder: '----------------', value: addressForm.bairro, onChangeText: (t) => setAddressForm({ ...addressForm, bairro: t }), row: 2, flex: 4 },
+					{ id: 'cidade', label: 'Cidade', placeholder: '----------------', value: addressForm.cidade, onChangeText: (t) => setAddressForm({ ...addressForm, cidade: t }), row: 2, flex: 4 },
+					{ id: 'estado', label: 'UF', placeholder: '--', value: addressForm.estado, onChangeText: (t) => setAddressForm({ ...addressForm, estado: t.toUpperCase() }), row: 2, flex: 2, maxLength: 2, textAlign: 'center' },
+				]}
+				onConfirm={saveAddress}
+				confirmText="Salvar Endereço"
+				onClose={() => setShowAddressModal(false)}
+			/>
+
 			<CustomProductModal
 				visible={modalVisible}
 				product={editingProduct}
@@ -657,7 +698,7 @@ export default function AdminScreen({ navigation }: any) {
 				keyboardType="phone-pad"
 				maxLength={15}
 			/>
-		</View>
+		</View >
 	);
 }
 
