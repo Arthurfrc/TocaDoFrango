@@ -2,6 +2,7 @@
 
 export const COLORS = {
     primary: '#FF0000',
+    selectOption: '#FF000030',
     secondary: '#FFD700',
     textSecondary: '#9E8C24',
     background: '#FFFFFF',
