@@ -115,21 +115,6 @@ export default function PrivacyPolicyScreen({ navigation }: any) {
                 <View style={styles.section}>
                     <Text style={styles.subtitle}>7. Tempo de Retenção</Text>
                     <Text style={styles.text}>
-                        Nossos dados são armazenados pelo tempo necessário para:
-                    </Text>
-                    <View style={styles.list}>
-                        <Text style={styles.listItem}>• Cardápio e produtos: enquanto ativos</Text>
-                        <Text style={styles.listItem}>• Carrinho temporário: durante sessão</Text>
-                        <Text style={styles.listItem}>• Configurações do sistema: enquanto necessário</Text>
-                    </View>
-                    <Text style={styles.text}>
-                        Dados do cliente (nome, telefone, endereço) são usados apenas no momento do pedido e não armazenados permanentemente.
-                    </Text>
-                </View>
-
-                <View style={styles.section}>
-                    <Text style={styles.subtitle}>8. Tempo de Retenção</Text>
-                    <Text style={styles.text}>
                         Seus dados são armazenados pelo tempo necessário para:
                     </Text>
                     <View style={styles.list}>

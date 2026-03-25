@@ -207,7 +207,7 @@ export default function HomeScreen({ navigation }: any) {
                 <CustomAlert
                     visible={showDevAlert}
                     title="Sobre o Desenvolvedor"
-                    message={`Desenvolvido por:\n👨‍💻 Arthur F. R. Costra\nEng. Computação\n📧 arthurfelipercosta@gmail.com\n🐙 github.com/arthurfelipercosta\n💼 linkedin.com/in/arthurfrc\n\n© 2026\nTodos os direitos reservados`}
+                    message={`Desenvolvido por:\n👨‍💻 Arthur F. R. Costa\nEng. Computação\n📧 arthurfelipercosta@gmail.com\n🐙 github.com/arthurfelipercosta\n💼 linkedin.com/in/arthurfrc\n\n© 2026\nTodos os direitos reservados`}
                     confirmText="Fechar"
                     onConfirm={() => setShowDevAlert(false)}
                     onCancel={() => setShowDevAlert(false)}

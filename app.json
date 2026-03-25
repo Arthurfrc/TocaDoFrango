@@ -41,8 +41,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "f8a44716-bcc2-4301-af52-1b0947609efa"
+        "projectId": "7775bb3f-5018-4162-a0cc-4e4a35e07ff8"
       }
-    }
+    },
+    "owner": "meus-apps-rn-br"
   }
 }
