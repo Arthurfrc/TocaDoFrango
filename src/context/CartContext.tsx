@@ -12,8 +12,8 @@ interface CartContextType {
     removeFromCart: (productId: string) => void;
     updateQuantity: (productId: string, quantity: number, products: Product[]) => void;
     clearCart: () => void;
-    deliveryType: 'entrega' | 'retirada';
-    setDeliveryType: (type: 'entrega' | 'retirada') => void;
+    deliveryType: 'entrega' | 'retirada' | null;
+    setDeliveryType: (type: 'entrega' | 'retirada' | null) => void;
     getDeliveryFee: () => number;
     decreaseStock: (productId: string, products: Product[], quantity?: number) => Promise<void>;
     checkStockAvailability: (cartItems: any[]) => Promise<{ available: boolean, message?: string }>;
@@ -27,7 +27,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
     const [cart, setCart] = useState<{ [key: string]: number }>({});
-    const [deliveryType, setDeliveryType] = useState<'entrega' | 'retirada'>('retirada');
+    const [deliveryType, setDeliveryType] = useState<'entrega' | 'retirada' | null>(null);
     const [selectedDeliveryZone, setSelectedDeliveryZone] = useState<DeliveryZone | null>(null);
     const [selectedDeliveryZoneId, setSelectedDeliveryZoneId] = useState<string | null>(null);
 
