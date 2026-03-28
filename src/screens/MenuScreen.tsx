@@ -23,6 +23,7 @@ export default function MenuScreen({ navigation }: any) {
 
     const menuByCategory = products
         .filter(product => product.available)
+        .sort((a, b) => a.name.localeCompare(b.name))
         .reduce((acc, product) => {
             const categoryName = getCategoryName(product, categories);
             if (!acc[categoryName]) {
@@ -56,7 +57,7 @@ export default function MenuScreen({ navigation }: any) {
                         (_x, y) => {
                             scrollViewRef.current?.scrollTo({ y, animated: true });
                         },
-                        () => {}
+                        () => { }
                     );
                 }
             }, 50);
@@ -67,7 +68,7 @@ export default function MenuScreen({ navigation }: any) {
     useFocusEffect(
         React.useCallback(() => {
             setExpandedCategory(null);
-            return () => {};
+            return () => { };
         }, [])
     );
 
@@ -199,11 +200,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         flex: 1,
+        flexWrap: 'wrap',
     },
     categoryTitle: {
         fontSize: 20,
         fontWeight: 'bold',
         color: COLORS.primary,
+        flex: 1,
+        flexWrap: 'wrap',
+        maxWidth: '90%'
     },
     categoryCount: {
         fontSize: 14,

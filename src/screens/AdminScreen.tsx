@@ -14,13 +14,10 @@ import {
 	Alert
 } from 'react-native';
 import { FontAwesome5, Fontisto, MaterialIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { COLORS } from '@/constants/colors';
 import { Product, Category } from '@/types';
-import { getCategoryName } from '@/utils';
 import { useMenu } from '@/context/MenuContext';
-import { menuService } from '@/services/menuService';
 import { configService } from '@/services/configService';
 
 import CustomAlert from '@/components/CustomAlert';
@@ -160,7 +157,8 @@ export default function AdminScreen({ navigation }: any) {
 	];
 
 	const handleDeleteCategory = (categoryId: string) => {
-		const categoryProducts = products.filter(p => p.categoryId === categoryId);
+		const categoryProducts = products
+			.filter(p => p.categoryId === categoryId);
 
 		showAlert(
 			'🗑️ Confirmar Exclusão',
@@ -414,123 +412,127 @@ export default function AdminScreen({ navigation }: any) {
 									<Text style={styles.emptySubtext}>Adicione categorias para organizar seus produtos</Text>
 								</View>
 							) : (
-								categories.map((category) => {
-									const categoryProducts = products.filter(p => p.categoryId === category.id);
-									const isExpanded = expandedCategory === category.id;
+								categories
+									.sort((a, b) => a.name.localeCompare(b.name))
+									.map((category) => {
+										const categoryProducts = products
+											.filter(p => p.categoryId === category.id)
+											.sort((a, b) => a.name.localeCompare(b.name));
+										const isExpanded = expandedCategory === category.id;
 
-									return (
-										<View
-											key={category.id}
-											ref={ref => { categoryRefs.current[category.id] = ref; }}
-											style={styles.categoryContainer}
-										>
-											<TouchableOpacity
-												style={styles.categoryHeader}
-												onPress={() => toggleCategoryExpansion(category.id)}
+										return (
+											<View
+												key={category.id}
+												ref={ref => { categoryRefs.current[category.id] = ref; }}
+												style={styles.categoryContainer}
 											>
-												<View style={styles.categoryContent}>
-													<View style={styles.categoryNameRow}>
-														<FontAwesome5
-															name={isExpanded ? "chevron-down" : "chevron-right"}
-															size={16}
-															color={COLORS.text}
-															style={{ marginRight: 10 }}
-														/>
-														<Text style={styles.categoryName}>{category.name}</Text>
-													</View>
-													<View style={styles.categoryActionsRow}>
-														<Text style={styles.categoryCount}>
-															({categoryProducts.length} produtos)
-														</Text>
-														<View style={styles.categoryActions}>
-															<TouchableOpacity
-																style={styles.actionButton}
-																onPress={() => {
-																	setEditingCategory(category);
-																	setCategoryName(category.name);
-																	setShowCategoryModal(true);
-																}}
-															>
-																<FontAwesome5 name="edit" size={16} color={COLORS.admin} />
-															</TouchableOpacity>
+												<TouchableOpacity
+													style={styles.categoryHeader}
+													onPress={() => toggleCategoryExpansion(category.id)}
+												>
+													<View style={styles.categoryContent}>
+														<View style={styles.categoryNameRow}>
+															<FontAwesome5
+																name={isExpanded ? "chevron-down" : "chevron-right"}
+																size={16}
+																color={COLORS.text}
+																style={{ marginRight: 10 }}
+															/>
+															<Text style={styles.categoryName}>{category.name}</Text>
+														</View>
+														<View style={styles.categoryActionsRow}>
+															<Text style={styles.categoryCount}>
+																({categoryProducts.length} produtos)
+															</Text>
+															<View style={styles.categoryActions}>
+																<TouchableOpacity
+																	style={styles.actionButton}
+																	onPress={() => {
+																		setEditingCategory(category);
+																		setCategoryName(category.name);
+																		setShowCategoryModal(true);
+																	}}
+																>
+																	<FontAwesome5 name="edit" size={16} color={COLORS.admin} />
+																</TouchableOpacity>
 
-															<TouchableOpacity
-																style={styles.actionButton}
-																onPress={() => handleDeleteCategory(category.id)}
-															>
-																<FontAwesome5 name="trash" size={16} color="#FF5252" />
-															</TouchableOpacity>
+																<TouchableOpacity
+																	style={styles.actionButton}
+																	onPress={() => handleDeleteCategory(category.id)}
+																>
+																	<FontAwesome5 name="trash" size={16} color="#FF5252" />
+																</TouchableOpacity>
 
-															<TouchableOpacity
-																style={styles.actionButton}
-																onPress={() => openEditModal(undefined, category.id)}
-															>
-																<FontAwesome5 name="plus" size={16} color={COLORS.admin} />
-															</TouchableOpacity>
+																<TouchableOpacity
+																	style={styles.actionButton}
+																	onPress={() => openEditModal(undefined, category.id)}
+																>
+																	<FontAwesome5 name="plus" size={16} color={COLORS.admin} />
+																</TouchableOpacity>
+															</View>
 														</View>
 													</View>
-												</View>
-											</TouchableOpacity>
+												</TouchableOpacity>
 
-											{isExpanded && (
-												<View style={styles.productsList}>
-													{categoryProducts.length === 0 ? (
-														<View style={styles.emptySubContainer}>
-															<Text style={styles.emptySubtext}>Nenhum produto nesta categoria</Text>
-														</View>
-													) : (
-														categoryProducts.map(product => (
-															<View key={product.id} style={styles.productCard}>
-																<View style={styles.productInfo}>
-																	<Text style={styles.productName}>{product.name}</Text>
-																	<Text style={styles.productDescription}>{product.description}</Text>
-																	<Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
-																	{product.hasStockControl && (
-																		<Text style={styles.stockInfo}>
-																			Estoque: {product.stock || 0} unidades
-																		</Text>
-																	)}
-																	<View style={styles.statusContainer}>
-																		<Text style={styles.statusText}>
-																			Status: {product.available ? '✅ Disponível' : '❌ Indisponível'}
-																		</Text>
+												{isExpanded && (
+													<View style={styles.productsList}>
+														{categoryProducts.length === 0 ? (
+															<View style={styles.emptySubContainer}>
+																<Text style={styles.emptySubtext}>Nenhum produto nesta categoria</Text>
+															</View>
+														) : (
+															categoryProducts.map(product => (
+																<View key={product.id} style={styles.productCard}>
+																	<View style={styles.productInfo}>
+																		<Text style={styles.productName}>{product.name}</Text>
+																		<Text style={styles.productDescription}>{product.description}</Text>
+																		<Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
+																		{product.hasStockControl && (
+																			<Text style={styles.stockInfo}>
+																				Estoque: {product.stock || 0} unidades
+																			</Text>
+																		)}
+																		<View style={styles.statusContainer}>
+																			<Text style={styles.statusText}>
+																				Status: {product.available ? '✅ Disponível' : '❌ Indisponível'}
+																			</Text>
+																		</View>
+																	</View>
+
+																	<View style={styles.actions}>
+																		<TouchableOpacity
+																			style={[styles.actionButton, styles.editButton]}
+																			onPress={() => openEditModal(product)}
+																		>
+																			<FontAwesome5 name="edit" size={16} color="black" />
+																		</TouchableOpacity>
+
+																		<TouchableOpacity
+																			style={[styles.actionButton, styles.toggleButton]}
+																			onPress={() => toggleProductAvailability(product.id)}
+																		>
+																			<FontAwesome5
+																				name={product.available ? "eye-slash" : "eye"}
+																				size={16}
+																				color="black"
+																			/>
+																		</TouchableOpacity>
+
+																		<TouchableOpacity
+																			style={[styles.actionButton, styles.deleteButton]}
+																			onPress={() => handleDeleteProduct(product.id)}
+																		>
+																			<FontAwesome5 name="trash" size={16} color="black" />
+																		</TouchableOpacity>
 																	</View>
 																</View>
-
-																<View style={styles.actions}>
-																	<TouchableOpacity
-																		style={[styles.actionButton, styles.editButton]}
-																		onPress={() => openEditModal(product)}
-																	>
-																		<FontAwesome5 name="edit" size={16} color="black" />
-																	</TouchableOpacity>
-
-																	<TouchableOpacity
-																		style={[styles.actionButton, styles.toggleButton]}
-																		onPress={() => toggleProductAvailability(product.id)}
-																	>
-																		<FontAwesome5
-																			name={product.available ? "eye-slash" : "eye"}
-																			size={16}
-																			color="black"
-																		/>
-																	</TouchableOpacity>
-
-																	<TouchableOpacity
-																		style={[styles.actionButton, styles.deleteButton]}
-																		onPress={() => handleDeleteProduct(product.id)}
-																	>
-																		<FontAwesome5 name="trash" size={16} color="black" />
-																	</TouchableOpacity>
-																</View>
-															</View>
-														))
-													)}
-												</View>
-											)}
-										</View>
-									);
-								})
+															))
+														)}
+													</View>
+												)}
+											</View>
+										);
+									})
 							)}
 						</>
 					)}
