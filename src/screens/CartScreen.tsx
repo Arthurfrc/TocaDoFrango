@@ -1,22 +1,7 @@
 // src/screens/CartScreen.tsx
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RouteProp } from '@react-navigation/native';
-import { APP_CONFIG } from '@/config/app';
-import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
-    TextInput,
-    KeyboardAvoidingView,
-    Platform,
-    Linking,
-    Pressable,
-    Modal
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Linking, Pressable, Modal } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
 import { COLORS } from '@/constants/colors';
@@ -25,6 +10,7 @@ import { useCart } from '@/context/CartContext';
 import { adminNumber } from '@/utils/whatsapp';
 import CustomAlert from '@/components/CustomAlert';
 import { deliveryService, DeliveryZone } from '@/services/deliveryService';
+import useUserData from '@/hooks/useUserData';
 
 interface AlertConfig {
     title: string;
@@ -40,6 +26,8 @@ export default function CartScreen({ navigation }: any) {
     const [showDeliveryOptions, setShowDeliveryOptions] = useState(false);
     const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
     const [showZoneSelector, setShowZoneSelector] = useState(false);
+
+    const { userData, loadUserData, saveUserData } = useUserData();
 
     const {
         cart,
@@ -224,6 +212,7 @@ export default function CartScreen({ navigation }: any) {
                 !customerInfo.name ||
                 !customerInfo.phone ||
                 !customerInfo.paymentMethod ||
+                !deliveryType ||
                 (deliveryType === 'entrega' && !customerInfo.address)
             ) {
                 showAlert(
@@ -256,9 +245,13 @@ export default function CartScreen({ navigation }: any) {
                 'Deseja enviar este pedido para o WhatsApp?',
                 async () => {
                     try {
+                        await saveUserData({
+                            name: customerInfo.name,
+                            phone: customerInfo.phone,
+                            address: customerInfo.address
+                        });
                         await Linking.openURL(whatsappUrl);
 
-                        // ✅ FIX 7: usa cartItems (valor) em vez de getCartItems()
                         for (const item of cartItems) {
                             if (item.hasStockControl) {
                                 await decreaseStock(item.id, products, item.quantity);
@@ -266,13 +259,7 @@ export default function CartScreen({ navigation }: any) {
                         }
 
                         clearCart();
-                        setCustomerInfo({
-                            name: '',
-                            phone: '',
-                            paymentMethod: '',
-                            address: ''
-                        });
-                        setDeliveryType('retirada');
+                        setDeliveryType(null);
                     } catch (error) {
                         showAlert(
                             '❌ Erro',
@@ -309,8 +296,20 @@ export default function CartScreen({ navigation }: any) {
     };
 
     useEffect(() => {
+        loadUserData();
         loadDeliveryZones();
     }, []);
+
+    useEffect(() => {
+        if (userData) {
+            setCustomerInfo(prev => ({
+                ...prev,
+                name: userData.name || prev.name,
+                phone: userData.phone || prev.phone,
+                address: userData.address || prev.address
+            }));
+        }
+    }, [userData]);
 
     if (cartItems.length === 0) {
         return (
@@ -328,7 +327,6 @@ export default function CartScreen({ navigation }: any) {
 
     return (
         <KeyboardAvoidingView
-            // behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             behavior='padding'
             keyboardVerticalOffset={Platform.OS === 'android' ? 5 : 0}
             style={styles.container}
@@ -438,9 +436,10 @@ export default function CartScreen({ navigation }: any) {
                             onPress={() => setShowDeliveryOptions(true)}
                         >
                             <Text style={styles.deliveryText}>
-                                {deliveryType === 'retirada'
-                                    ? '🏃 Retirada no local'
-                                    : `🏍️ Delivery - ${selectedDeliveryZone?.name || 'Selecione um bairro'} (+R$${getDeliveryFee().toFixed(2)})`}
+                                {deliveryType === null ? 'Selecione o tipo de entrega' :
+                                    deliveryType === 'retirada'
+                                        ? '🏃 Retirada no local'
+                                        : `🏍️ Delivery - ${selectedDeliveryZone?.name || 'Selecione um bairro'} (+R$${getDeliveryFee().toFixed(2)})`}
                             </Text>
                             <FontAwesome5 name="chevron-down" size={16} color={COLORS.text} />
                         </TouchableOpacity>
@@ -506,9 +505,9 @@ export default function CartScreen({ navigation }: any) {
                 >
                     <Pressable
                         style={styles.paymentModalOverlay}
-                        onPress={() => { 
+                        onPress={() => {
                             setShowDeliveryOptions(false);
-                         }}
+                        }}
                     >
                         <View style={styles.paymentModalContent}>
                             <Text style={styles.paymentModalTitle}>Tipo de Entrega</Text>
