@@ -351,7 +351,7 @@ export default function CartScreen({ navigation }: any) {
 
                             <View style={styles.quantityControls}>
                                 <TouchableOpacity
-                                    style={styles.quantityButton}
+                                    style={styles.quantityButtonMinus}
                                     onPress={() =>
                                         item.quantity > 1
                                             ? updateQuantity(item.id, item.quantity - 1, products)
@@ -364,7 +364,7 @@ export default function CartScreen({ navigation }: any) {
                                 <Text style={styles.quantityText}>{item.quantity}</Text>
 
                                 <TouchableOpacity
-                                    style={styles.quantityButton}
+                                    style={styles.quantityButtonPlus}
                                     onPress={() => updateQuantity(item.id, item.quantity + 1, products)}
                                 >
                                     <Text style={styles.quantityButtonText}>+</Text>
@@ -673,7 +673,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     totalSection: {
-        backgroundColor: COLORS.text,
+        backgroundColor: COLORS.success,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
         textAlignVertical: 'top',
     },
     sendButton: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: COLORS.whats,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -729,8 +729,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10,
     },
-    quantityButton: {
+    quantityButtonMinus: {
         backgroundColor: COLORS.primary,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    quantityButtonPlus: {
+        backgroundColor: COLORS.success,
         width: 30,
         height: 30,
         borderRadius: 15,

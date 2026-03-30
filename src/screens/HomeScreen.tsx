@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
         opacity: 0.6,
     },
     exitButton: {
-        backgroundColor: '#FF5252',
+        backgroundColor: COLORS.exit,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',

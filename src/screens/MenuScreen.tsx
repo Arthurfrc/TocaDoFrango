@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     categoryTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: COLORS.primary,
+        color: COLORS.text,
         flex: 1,
         flexWrap: 'wrap',
         maxWidth: '90%'
@@ -251,10 +251,10 @@ const styles = StyleSheet.create({
     productPrice: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: COLORS.primary,
+        color: COLORS.success,
     },
     addButton: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: COLORS.text,
         width: 40,
         height: 40,
         borderRadius: 20,
