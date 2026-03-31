@@ -1,7 +1,7 @@
 // src/screens/MenuScreen.tsx
 
-import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import React, { useState, useRef, useMemo } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 
 import { COLORS } from "@/constants/colors";
@@ -11,18 +11,39 @@ import { getCategoryName } from "@/utils";
 import { MaterialIcons } from "@expo/vector-icons";
 import CustomAlert from "@/components/CustomAlert";
 
+
+const normalizeString = (str: string) => {
+    return str
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+}
+
 export default function MenuScreen({ navigation }: any) {
     const { cart, addToCart } = useCart();
     const [alertVisible, setAlertVisible] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ title: '', message: '' });
     const { products, categories } = useMenu();
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+    const [searchText, setSearchText] = useState('');
 
     const scrollViewRef = useRef<ScrollView>(null);
     const categoryRefs = useRef<{ [key: string]: View | null }>({});
 
-    const menuByCategory = products
-        .filter(product => product.available)
+    const normalizeSearch = normalizeString(searchText);
+
+    const productsWithNormalizedName = useMemo(() => {
+        return products.map(product => ({
+            ...product,
+            normalizedName: normalizeString(product.name)
+        }));
+    }, [products]);
+
+    const menuByCategory = productsWithNormalizedName
+        .filter(product =>
+            product.available &&
+            product.normalizedName.includes(normalizeSearch)
+        )
         .sort((a, b) => a.name.localeCompare(b.name))
         .reduce((acc, product) => {
             const categoryName = getCategoryName(product, categories);
@@ -68,6 +89,7 @@ export default function MenuScreen({ navigation }: any) {
     useFocusEffect(
         React.useCallback(() => {
             setExpandedCategory(null);
+            setSearchText('');
             return () => { };
         }, [])
     );
@@ -88,7 +110,14 @@ export default function MenuScreen({ navigation }: any) {
 
     return (
         <ScrollView ref={scrollViewRef} style={styles.container}>
-            <Text style={styles.title}>🍗 Cardápio</Text>
+            <Text style={styles.title}>Cardápio</Text>
+
+            <TextInput
+                style={styles.searchInput}
+                placeholder="🔍 Buscar produto..."
+                value={searchText}
+                onChangeText={setSearchText}
+            />
 
             {getTotalItems() > 0 && (
                 <TouchableOpacity
@@ -171,10 +200,11 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: COLORS.primary,
+        color: COLORS.text,
         marginBottom: 20,
         textAlign: 'center',
     },
+
     categorySection: {
         marginBottom: 25,
     },
@@ -286,5 +316,23 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#666',
         fontStyle: 'italic',
+    },
+    searchInput: {
+        backgroundColor: '#FFFFFF',
+        borderWidth: 2,
+        borderColor: COLORS.primary,
+        borderRadius: 25,
+        padding: 15,
+        paddingHorizontal: 20,
+        fontSize: 16,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
 });

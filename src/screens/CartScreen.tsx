@@ -336,7 +336,7 @@ export default function CartScreen({ navigation }: any) {
                 keyboardShouldPersistTaps='handled'
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.title}>🛒 Meu Pedido</Text>
+                <Text style={styles.title}>Meu Pedido</Text>
 
                 {/* Itens do Carrinho */}
                 <View style={styles.itemsSection}>
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: COLORS.primary,
+        color: COLORS.text,
         marginBottom: 20,
         textAlign: 'center',
     },
