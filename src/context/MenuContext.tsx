@@ -7,6 +7,7 @@ import { db } from '@/config/firebase';
 import { Product, Category } from '@/types';
 import { getCategoryName } from '@/utils';
 import { menuService, categoriesService } from '@/services/menuService';
+import { imageService } from '@/services/imageService';
 
 interface MenuContextType {
     products: Product[];
@@ -18,7 +19,7 @@ interface MenuContextType {
 
     hasUnsavedChanges: boolean;
     publishChanges: () => Promise<void>;
-    discardChanges: () => void;
+    discardChanges: () => Promise<void>;
     isPublishing: boolean;
     isLoading: boolean;
 
@@ -130,24 +131,43 @@ export function MenuProvider({ children }: { children: ReactNode }) {
     const publishChanges = async () => {
         setIsPublishing(true);
         try {
-            // Aqui vai a lógica do Firebase depois
-            console.log('Publicando alterações...');
+            const productsToSave = await Promise.all(
+                (products || []).map(async (product) => {
+                    if (product.image?.startsWith('file://')) {
+                        const url = await imageService.uploadImage(product.id, product.image);
+                        return { ...product, image: url };
+                    }
+                    return product;
+                })
+            );
+
+            setProducts(productsToSave);
+
             await Promise.all([
-                menuService.saveMenu(products || []),
+                menuService.saveMenu(productsToSave),
                 categoriesService.saveAllCategories(categories || [])
             ]);
+
             setHasUnsavedChanges(false);
             Alert.alert('✅ Sucesso!', 'Alterações publicadas com sucesso!');
         } catch (error) {
-            console.error('Erro ao publicar alterações:', error);
-            Alert.alert('❌ Erro!', 'Erro ao publicar alterações!');
+            const msg = JSON.stringify(error) || 'Erro desconhecido';
+            console.error('Erro ao publicar:', msg);
+            Alert.alert('❌ Erro!', msg);
+            // console.error('Erro ao publicar alterações:', error);
+            // Alert.alert('❌ Erro!', 'Erro ao publicar alterações!');
         } finally {
             setIsPublishing(false);
         }
     }
 
-    const discardChanges = () => {
-        setHasUnsavedChanges(false);
+    const discardChanges = async () => {
+        try {
+            await syncFromFirebase();
+            setHasUnsavedChanges(false);
+        } catch (error) {
+            Alert.alert('❌ Erro', 'Não foi possível descartar as alterações');
+        }
     }
 
     useEffect(() => {

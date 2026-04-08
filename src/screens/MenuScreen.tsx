@@ -1,15 +1,18 @@
 // src/screens/MenuScreen.tsx
 
 import React, { useState, useRef, useMemo } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { COLORS } from "@/constants/colors";
 import { useMenu } from "@/context/MenuContext";
 import { useCart } from "@/context/CartContext";
 import { getCategoryName } from "@/utils";
 import { MaterialIcons } from "@expo/vector-icons";
+import { Product } from "@/types";
 import CustomAlert from "@/components/CustomAlert";
+import ProductDetailModal from "@/components/ProductDetailModal";
 
 
 const normalizeString = (str: string) => {
@@ -26,6 +29,7 @@ export default function MenuScreen({ navigation }: any) {
     const { products, categories } = useMenu();
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
     const [searchText, setSearchText] = useState('');
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
     const scrollViewRef = useRef<ScrollView>(null);
     const categoryRefs = useRef<{ [key: string]: View | null }>({});
@@ -159,11 +163,30 @@ export default function MenuScreen({ navigation }: any) {
                             <View style={styles.productsContainer}>
                                 {products.map(product => (
                                     <View key={product.id} style={styles.productCard}>
-                                        <View style={styles.productInfo}>
-                                            <Text style={styles.productName}>{product.name}</Text>
-                                            <Text style={styles.productDescription}>{product.description}</Text>
-                                            <Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
-                                        </View>
+                                        <TouchableOpacity 
+                                            style={styles.productTouchable}
+                                            onPress={() => setSelectedProduct(product)}
+                                            activeOpacity={0.7}
+                                        >
+                                            {/* Imagem do Produto */}
+                                            {product.image ? (
+                                                <Image
+                                                    source={{ uri: product.image }}
+                                                    style={styles.productImage}
+                                                    resizeMode="cover"
+                                                />
+                                            ) : (
+                                                <View style={styles.productImagePlaceholder}>
+                                                    <MaterialCommunityIcons name="camera-off" size={24} color="#ccc" />
+                                                </View>
+                                            )}
+
+                                            <View style={styles.productInfo}>
+                                                <Text style={styles.productName}>{product.name}</Text>
+                                                <Text style={styles.productDescription} numberOfLines={2}>{product.description}</Text>
+                                                <Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
+                                            </View>
+                                        </TouchableOpacity>
 
                                         <TouchableOpacity
                                             style={styles.addButton}
@@ -186,6 +209,12 @@ export default function MenuScreen({ navigation }: any) {
                 onCancel={() => setAlertVisible(false)}
                 confirmText="OK"
                 cancelText=""
+            />
+            <ProductDetailModal
+                visible={!!selectedProduct}
+                product={selectedProduct}
+                onClose={() => setSelectedProduct(null)}
+                onAddToCart={handleAddToCart}
             />
         </ScrollView>
     );
@@ -263,9 +292,11 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.12,
         shadowRadius: 3,
+        minHeight: 80,
     },
     productInfo: {
         flex: 1,
+        justifyContent: 'center',
     },
     productName: {
         fontSize: 16,
@@ -290,6 +321,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
+        marginLeft: 8,
     },
     addButtonText: {
         color: COLORS.background,
@@ -334,5 +366,25 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 3.84,
         elevation: 5,
+    },
+    productImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 8,
+        backgroundColor: '#f0f0f0',
+        marginRight: 12,
+    },
+    productImagePlaceholder: {
+        width: 80,
+        height: 80,
+        borderRadius: 8,
+        backgroundColor: '#f5f5f5',
+        marginRight: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    productTouchable: {
+        flex: 1,
+        flexDirection: 'row',
     },
 });

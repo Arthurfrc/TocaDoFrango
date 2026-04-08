@@ -1,8 +1,8 @@
 // src/screens/CartScreen.tsx
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Linking, Pressable, Modal } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Linking, Pressable, Modal, Image } from 'react-native';
+import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { COLORS } from '@/constants/colors';
 import { useMenu } from '@/context/MenuContext';
@@ -342,6 +342,17 @@ export default function CartScreen({ navigation }: any) {
                 <View style={styles.itemsSection}>
                     {cartItems.map((item, index) => (
                         <View key={index} style={styles.itemCard}>
+                            {item.image ? (
+                                <Image
+                                    source={{ uri: item.image }}
+                                    style={styles.itemImage}
+                                    resizeMode="cover"
+                                />
+                            ) : (
+                                <View style={styles.itemImagePlaceholder}>
+                                    <MaterialCommunityIcons name="camera-off" size={20} color="#ccc" />
+                                </View>
+                            )}
                             <View style={styles.itemInfo}>
                                 <Text style={styles.itemName}>{item.name}</Text>
                                 <Text style={styles.itemDetails}>
@@ -842,5 +853,21 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.selectOption,
         borderWidth: 2,
         borderColor: COLORS.selectOption,
+    },
+    itemImage: {
+        width: 60,
+        height: 60,
+        borderRadius: 8,
+        marginRight: 12,
+        backgroundColor: '#f0f0f0',
+    },
+    itemImagePlaceholder: {
+        width: 60,
+        height: 60,
+        borderRadius: 8,
+        marginRight: 12,
+        backgroundColor: '#f5f5f5',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });

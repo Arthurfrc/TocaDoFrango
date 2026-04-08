@@ -11,9 +11,15 @@ import {
 	Modal,
 	KeyboardAvoidingView,
 	Platform,
+	Image,
 	Alert
 } from 'react-native';
-import { FontAwesome5, Fontisto, MaterialIcons } from '@expo/vector-icons';
+import {
+	FontAwesome5,
+	Fontisto,
+	MaterialIcons,
+	MaterialCommunityIcons
+} from '@expo/vector-icons';
 
 import { COLORS } from '@/constants/colors';
 import { Product, Category } from '@/types';
@@ -483,6 +489,17 @@ export default function AdminScreen({ navigation }: any) {
 														) : (
 															categoryProducts.map(product => (
 																<View key={product.id} style={styles.productCard}>
+																	{product.image ? (
+																		<Image
+																			source={{ uri: product.image }}
+																			style={styles.adminProductImage}
+																			resizeMode="cover"
+																		/>
+																	) : (
+																		<View style={styles.adminProductImagePlaceholder}>
+																			<MaterialCommunityIcons name="camera-off" size={20} color="#ccc" />
+																		</View>
+																	)}
 																	<View style={styles.productInfo}>
 																		<Text style={styles.productName}>{product.name}</Text>
 																		<Text style={styles.productDescription}>{product.description}</Text>
@@ -1112,29 +1129,20 @@ const styles = StyleSheet.create({
 		fontWeight: 'bold',
 		color: COLORS.text,
 	},
-	modalActionsFee: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		gap: 10,
+	adminProductImage: {
+		width: 50,
+		height: 50,
+		borderRadius: 6,
+		backgroundColor: '#f0f0f0',
+		marginRight: 10,
 	},
-	modalButtonFee: {
-		flex: 1,
-		padding: 15,
-		borderRadius: 8,
+	adminProductImagePlaceholder: {
+		width: 50,
+		height: 50,
+		borderRadius: 6,
+		backgroundColor: '#f5f5f5',
+		marginRight: 10,
+		justifyContent: 'center',
 		alignItems: 'center',
-	},
-	cancelButtonFee: {
-		backgroundColor: '#E0E0E0',
-	},
-	saveButtonFee: {
-		backgroundColor: COLORS.primary,
-	},
-	modalButtonTextCancelFee: {
-		fontWeight: 'bold',
-		color: COLORS.text,
-	},
-	modalButtonTextConfirmFee: {
-		fontWeight: 'bold',
-		color: '#fff',
 	},
 });

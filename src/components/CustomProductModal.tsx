@@ -10,12 +10,14 @@ import {
     TextInput,
     ScrollView,
     KeyboardAvoidingView,
+    Image,
     Platform,
     Alert
 } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '@/constants/colors';
 import { Product, Category } from '@/types';
+import * as ImagePicker from 'expo-image-picker';
 
 interface CustomProductModalProps {
     visible: boolean;
@@ -45,6 +47,10 @@ export default function CustomProductModal({
         stock: product?.stock?.toString() || '0',
     });
 
+    const [selectedImage, setSelectedImage] = useState<string | null>(
+        product?.image || null
+    );
+
     const isEditing = !!product;
 
     const formatPrice = (value: string): string => {
@@ -53,46 +59,68 @@ export default function CustomProductModal({
         return (cents / 100).toFixed(2).replace('.', ',');
     };
 
-    const handleSave = () => {
+    const selectImage = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            quality: 0.7,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+            setSelectedImage(result.assets[0].uri);
+        }
+    };
+
+    const handleSave = async () => {
         if (!formData.name.trim()) {
             Alert.alert('Erro', 'Digite o nome do produto');
             return;
         }
 
-        const newProduct: Product = {
-            id: product?.id || Date.now().toString(),
-            name: formData.name.trim(),
-            description: formData.description.trim(),
-            price: parseFloat(formData.price.replace(',', '.')) || 0,
-            categoryId: selectedCategoryId,
-            hasStockControl: formData.hasStockControl,
-            stock: formData.hasStockControl ? (parseInt(formData.stock) || 0) : 0,
-            available: product?.available ?? true,
-        };
+        try {
+            const imageUrl = selectedImage ?? null;
 
-        onSave(newProduct);
-        
-        // Limpar formulário após salvar
-        setFormData({
-            name: '',
-            description: '',
-            price: '',
-            categoryId: '',
-            hasStockControl: false,
-            stock: '0',
-        });
+            const newProduct: Product = {
+                id: product?.id || Date.now().toString(),
+                name: formData.name.trim(),
+                description: formData.description.trim(),
+                price: parseFloat(formData.price.replace(',', '.')) || 0,
+                categoryId: selectedCategoryId,
+                hasStockControl: formData.hasStockControl,
+                stock: formData.hasStockControl ? (parseInt(formData.stock) || 0) : 0,
+                available: product?.available ?? true,
+                image: imageUrl ?? undefined, // Adicionar imagem
+            };
+
+            onSave(newProduct);
+
+            // Limpar formulário após salvar
+            setFormData({
+                name: '',
+                description: '',
+                price: '',
+                categoryId: '',
+                hasStockControl: false,
+                stock: '0',
+            });
+            setSelectedImage(null);
+        } catch (error) {
+            Alert.alert('Erro', 'Não foi possível salvar a imagem');
+        }
     };
 
     useEffect(() => {
-        setFormData({
-            name: product?.name || '',
-            description: product?.description || '',
-            price: product?.price?.toFixed(2).replace('.', ',') || '',
-            categoryId: product?.categoryId || product?.category || '',
-            hasStockControl: product?.hasStockControl || false,
-            stock: product?.stock?.toString() || '0',
-        });
-    }, [product]);
+        if (visible) {
+            setFormData({
+                name: product?.name || '',
+                description: product?.description || '',
+                price: product?.price?.toFixed(2).replace('.', ',') || '',
+                categoryId: product?.categoryId || product?.category || '',
+                hasStockControl: product?.hasStockControl || false,
+                stock: product?.stock?.toString() || '0',
+            });
+            setSelectedImage(product?.image || null);
+        }
+    }, [product, visible]);
 
     return (
         <Modal
@@ -173,6 +201,35 @@ export default function CustomProductModal({
                                 </Text>
                                 <FontAwesome5 name="chevron-down" size={14} color={COLORS.primary} />
                             </TouchableOpacity>
+                        </View>
+
+                        {/* Campo Imagem */}
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>
+                                <FontAwesome5 name="image" size={14} color={COLORS.primary} /> Foto do Produto
+                            </Text>
+
+                            <TouchableOpacity style={styles.imageSelector} onPress={selectImage}>
+                                {selectedImage ? (
+                                    <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
+                                ) : (
+                                    <View style={styles.imagePlaceholder}>
+                                        <MaterialCommunityIcons name="camera-off" size={32} color="#999" />
+                                        <Text style={styles.imagePlaceholderText}>Nenhuma foto</Text>
+                                        <Text style={styles.imagePlaceholderSubtext}>Toque para adicionar</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+
+                            {selectedImage && (
+                                <TouchableOpacity
+                                    style={styles.removeImageButton}
+                                    onPress={() => setSelectedImage(null)}
+                                >
+                                    <FontAwesome5 name="trash" size={14} color="#FF5252" />
+                                    <Text style={styles.removeImageText}>Remover foto</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
 
                         {/* Controle de Estoque */}
@@ -390,5 +447,46 @@ const styles = StyleSheet.create({
         fontSize: 42,
         fontWeight: 'bold',
         color: COLORS.text,
+    },
+    imageSelector: {
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        overflow: 'hidden',
+        backgroundColor: '#fff',
+    },
+    imagePreview: {
+        width: '100%',
+        height: 150,
+        resizeMode: 'cover',
+    },
+    imagePlaceholder: {
+        width: '100%',
+        height: 150,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f5f5f5',
+    },
+    imagePlaceholderText: {
+        marginTop: 8,
+        color: '#999',
+        fontSize: 14,
+    },
+    removeImageButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 8,
+        padding: 8,
+    },
+    removeImageText: {
+        marginLeft: 5,
+        color: '#FF5252',
+        fontSize: 12,
+    },
+    imagePlaceholderSubtext: {
+        marginTop: 4,
+        color: '#bbb',
+        fontSize: 12,
     },
 });
