@@ -18,6 +18,7 @@ import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '@/constants/colors';
 import { Product, Category } from '@/types';
 import * as ImagePicker from 'expo-image-picker';
+import { imageService } from '@/services/imageService';
 
 interface CustomProductModalProps {
     visible: boolean;
@@ -50,6 +51,7 @@ export default function CustomProductModal({
     const [selectedImage, setSelectedImage] = useState<string | null>(
         product?.image || null
     );
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     const isEditing = !!product;
 
@@ -81,9 +83,9 @@ export default function CustomProductModal({
 
             // Se há nova imagem selecionada
             if (selectedImage && selectedImage !== product?.image) {
-                // setUploadingImage(true);
-                // const productId = product?.id || Date.now().toString();
-                // imageUrl = await imageService.uploadImage(productId, selectedImage);
+                setUploadingImage(true);
+                const productId = product?.id || Date.now().toString();
+                imageUrl = await imageService.uploadImage(productId, selectedImage);
             }
 
             // SE REMOVEU A IMAGEM (selectedImage é null mas product.image existia)
@@ -100,7 +102,7 @@ export default function CustomProductModal({
                 hasStockControl: formData.hasStockControl,
                 stock: formData.hasStockControl ? (parseInt(formData.stock) || 0) : 0,
                 available: product?.available ?? true,
-                image: imageUrl ?? undefined,
+                ...(imageUrl && { image: imageUrl }),
             };
 
             onSave(newProduct);
