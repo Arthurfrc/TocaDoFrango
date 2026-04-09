@@ -46,6 +46,7 @@ export default function PrivacyPolicyScreen({ navigation }: any) {
                         <Text style={styles.listItem}>• Endereço de entrega</Text>
                         <Text style={styles.listItem}>• Histórico de pedidos</Text>
                         <Text style={styles.listItem}>• Informações de pagamento</Text>
+                        <Text style={styles.listItem}>• Imagens dos produtos (gerenciadas pelo administrador)</Text>
                     </View>
                 </View>
 
@@ -72,6 +73,7 @@ export default function PrivacyPolicyScreen({ navigation }: any) {
                         <Text style={styles.listItem}>• Servidores seguros (Firebase)</Text>
                         <Text style={styles.listItem}>• Acesso restrito à equipe</Text>
                         <Text style={styles.listItem}>• Backup regular dos dados</Text>
+                        <Text style={styles.listItem}>• Firebase Storage para imagens dos produtos</Text>
                     </View>
                 </View>
 
