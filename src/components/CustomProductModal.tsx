@@ -77,7 +77,19 @@ export default function CustomProductModal({
         }
 
         try {
-            const imageUrl = selectedImage ?? null;
+            let imageUrl: string | undefined = product?.image;
+
+            // Se há nova imagem selecionada
+            if (selectedImage && selectedImage !== product?.image) {
+                // setUploadingImage(true);
+                // const productId = product?.id || Date.now().toString();
+                // imageUrl = await imageService.uploadImage(productId, selectedImage);
+            }
+
+            // SE REMOVEU A IMAGEM (selectedImage é null mas product.image existia)
+            if (!selectedImage && product?.image) {
+                imageUrl = undefined; // REMOVE A IMAGEM
+            }
 
             const newProduct: Product = {
                 id: product?.id || Date.now().toString(),
@@ -88,7 +100,7 @@ export default function CustomProductModal({
                 hasStockControl: formData.hasStockControl,
                 stock: formData.hasStockControl ? (parseInt(formData.stock) || 0) : 0,
                 available: product?.available ?? true,
-                image: imageUrl ?? undefined, // Adicionar imagem
+                image: imageUrl ?? undefined,
             };
 
             onSave(newProduct);
