@@ -12,7 +12,8 @@ import {
     KeyboardAvoidingView,
     Image,
     Platform,
-    Alert
+    Alert,
+    ActivityIndicator
 } from 'react-native';
 import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '@/constants/colors';
@@ -118,7 +119,10 @@ export default function CustomProductModal({
             });
             setSelectedImage(null);
         } catch (error) {
+            setUploadingImage(false);
             Alert.alert('Erro', 'Não foi possível salvar a imagem');
+        } finally {
+            setUploadingImage(false);
         }
     };
 
@@ -306,16 +310,25 @@ export default function CustomProductModal({
                         <View style={styles.modalActions}>
                             <TouchableOpacity
                                 style={[styles.modalButton, styles.cancelButton]}
+                                disabled={uploadingImage}
                                 onPress={onCancel}
                             >
-                                <Text style={styles.modalButtonTextCancel}>Cancelar</Text>
+                                <Text style={[
+                                    styles.modalButtonTextCancel,
+                                    uploadingImage && { color: '#ccc' }
+                                ]}>Cancelar</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
                                 style={[styles.modalButton, styles.saveButton]}
+                                disabled={uploadingImage}
                                 onPress={handleSave}
                             >
-                                <Text style={styles.modalButtonTextConfirm}>Salvar</Text>
+                                {uploadingImage ? (
+                                    <ActivityIndicator color={COLORS.background} size="small" />
+                                ) : (
+                                    <Text style={styles.modalButtonTextConfirm}>Salvar</Text>
+                                )}
                             </TouchableOpacity>
                         </View>
                     </ScrollView>
