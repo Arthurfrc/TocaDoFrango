@@ -104,7 +104,7 @@ export default function CartScreen({ navigation }: any) {
             0
         );
         return itemsTotal + getDeliveryFee();
-    }, [cartItems, deliveryType, selectedDeliveryZone]);
+    }, [cartItems, getDeliveryFee]);
 
     const loadDeliveryZones = async () => {
         try {
@@ -126,7 +126,7 @@ export default function CartScreen({ navigation }: any) {
         );
     };
 
-    const showAlert = (
+    const showAlert = useCallback((
         title: string,
         message: string,
         onConfirm: () => void,
@@ -149,40 +149,38 @@ export default function CartScreen({ navigation }: any) {
             cancelText,
         });
         setAlertVisible(true);
-    };
+    }, []);
 
-    const formatWhatsAppMessage = () => {
-        // ✅ FIX 5: usa cartItems (valor) em vez de getCartItems()
-        let message = `🐔 *TOCA DO FRANGO - PEDIDO CONFIRMADO* 🐔`;
-        message += `\n👤 *Cliente:* ${customerInfo.name}`;
-        message += `\n📞 *Tel:* ${customerInfo.phone}`;
-        message += `\n🏍️ *Entrega:* ${deliveryType === 'retirada'
-            ? 'Retirada no local'
-            : `Delivery - ${selectedDeliveryZone?.name || 'Selecione um bairro'} (+R$ ${getDeliveryFee().toFixed(2)})`
-            }`;
+    const formatWhatsAppMessage = useCallback(() => {
+        let message = `🐔 *TOCA DO FRANGO — PEDIDO CONFIRMADO*\n\n`;
 
-        if (deliveryType === 'entrega') {
-            message += `\n📍 *Endereço:* ${customerInfo.address}`;
+        message += `*Cliente:* ${customerInfo.name}\n`;
+        message += `*Telefone:* ${customerInfo.phone}\n`;
+        message += `*Pagamento:* ${customerInfo.paymentMethod}\n`;
+
+        if (deliveryType === 'retirada') {
+            message += `*Entrega:* Retirada no local\n`;
+        } else {
+            message += `*Entrega:* Delivery — ${selectedDeliveryZone?.name || 'Não informado'}\n`;
+            message += `*Endereço:* ${customerInfo.address}\n`;
         }
-        message += `\n💳 *Pagamento:* ${customerInfo.paymentMethod}`;
-        message += `\n📋 *PEDIDO*\n`;
-        message += `${'─'.repeat(20)}`;
+
+        message += `\n*ITENS DO PEDIDO*\n\n`;
 
         cartItems.forEach((item, index) => {
-            message += `\n${index + 1}. ${item.name} - ${item.quantity}x = R$ ${(item.price * item.quantity).toFixed(2)}\n`;
+            message += `${index + 1}. ${item.name}\n`;
+            message += `   ${item.quantity}x  •  R$ ${(item.price * item.quantity).toFixed(2)}\n\n`;
         });
 
         if (getDeliveryFee() > 0) {
-            message += `\n🏍️ *Taxa de entrega:* R$ ${getDeliveryFee().toFixed(2)}\n`;
+            message += `*Taxa de entrega:* R$ ${getDeliveryFee().toFixed(2)}\n`;
         }
 
-        message += `${'═'.repeat(20)}`;
-        message += `\n💰 *TOTAL: R$ ${getTotal.toFixed(2)}*`;
-        message += `\n⏱️ *Prazo:* 40-60 min`;
-        message += `\n📱 *Enviado pelo App*`;
+        message += `*TOTAL: R$ ${getTotal.toFixed(2)}*\n\n`;
+        message += `⏱️ Prazo: 40-60 min`;
 
         return message;
-    };
+    }, [customerInfo, deliveryType, selectedDeliveryZone, cartItems, getDeliveryFee, getTotal]);
 
     const validatePhone = (phone: string): boolean => {
         const phoneRegex = /^\d{10,11}$/;
@@ -190,11 +188,10 @@ export default function CartScreen({ navigation }: any) {
         return phoneRegex.test(cleanedPhone);
     };
 
-    const sendToWhatsApp = async () => {
+    const sendToWhatsApp = useCallback(async () => {
         setLoading(true);
 
         try {
-            // ✅ FIX 6: usa cartItems (valor) em vez de getCartItems()
             const stockCheck = await checkStockAvailability(cartItems);
 
             if (!stockCheck.available) {
@@ -280,7 +277,7 @@ export default function CartScreen({ navigation }: any) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [customerInfo, deliveryType, cartItems, products, showAlert, formatWhatsAppMessage, saveUserData, checkStockAvailability, validatePhone, decreaseStock, clearCart, setDeliveryType]);
 
     const formatPhone = (text: string) => {
         const cleaned = text.replace(/\D/g, '');
