@@ -8,7 +8,7 @@ import { DeliveryZone } from '@/services/deliveryService';
 
 interface CartContextType {
     cart: { [key: string]: number };
-    addToCart: (productId: string, products: Product[]) => boolean;
+    addToCart: (productId: string, products: Product[], quantity?: number) => boolean;
     removeFromCart: (productId: string) => void;
     updateQuantity: (productId: string, quantity: number, products: Product[]) => void;
     clearCart: () => void;
@@ -34,12 +34,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const [alertVisible, setAlertVisible] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ title: '', message: '' });
 
-    const addToCart = (productId: string, products: Product[]): boolean => {
+    const addToCart = (productId: string, products: Product[], quantity: number = 1): boolean => {
         const product = products.find(p => p.id === productId);
 
         if (product?.hasStockControl) {
             const currentQuantity = cart[productId] || 0;
-            if (currentQuantity >= (product.stock || 0)) {
+            if (currentQuantity + quantity > (product.stock || 0)) {
                 setAlertConfig({
                     title: '❌ Estoque Esgotado',
                     message: 'Este produto não tem mais unidades disponíveis no momento!'
@@ -50,7 +50,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
         setCart(prev => ({
             ...prev,
-            [productId]: (prev[productId] || 0) + 1
+            [productId]: (prev[productId] || 0) + quantity
         }));
         return true;
     };
