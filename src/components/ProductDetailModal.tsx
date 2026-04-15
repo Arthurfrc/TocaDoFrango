@@ -1,6 +1,6 @@
 // src/components/ProductDetailModal.tsx
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -17,7 +17,7 @@ interface ProductDetailModalProps {
     visible: boolean;
     product: Product | null;
     onClose: () => void;
-    onAddToCart: (productId: string) => void;
+    onAddToCart: (productId: string, quantity: number) => void;
 }
 
 export default function ProductDetailModal({
@@ -26,9 +26,17 @@ export default function ProductDetailModal({
     onClose,
     onAddToCart,
 }: ProductDetailModalProps) {
+    const [quantity, setQuantity] = useState(1);
+    const increaseQuantity = () => setQuantity(prev => prev + 1);
+    const decreaseQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
+
+    useEffect(() => {
+        setQuantity(1);
+    }, [product]);
+
     const handleAddToCart = () => {
         if (product) {
-            onAddToCart(product.id);
+            onAddToCart(product.id, quantity);
             onClose();
         }
     };
@@ -74,6 +82,20 @@ export default function ProductDetailModal({
                                 Estoque: {product.stock || 0} unidades
                             </Text>
                         )}
+                    </View>
+
+                    <View style={styles.quantitySelector}>
+                        <TouchableOpacity
+                            style={styles.quantityButton}
+                            onPress={decreaseQuantity}
+                            disabled={quantity <= 1}
+                        >
+                            <MaterialCommunityIcons name="minus" size={20} color={quantity <= 1 ? '#ccc' : COLORS.primary} />
+                        </TouchableOpacity>
+                        <Text style={styles.quantityText}>{quantity}</Text>
+                        <TouchableOpacity style={styles.quantityButton} onPress={increaseQuantity}>
+                            <MaterialCommunityIcons name="plus" size={20} color={COLORS.primary} />
+                        </TouchableOpacity>
                     </View>
 
                     {/* Botões */}
@@ -190,5 +212,32 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: 'white',
+    },
+    quantitySelector: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+        backgroundColor: '#F8F8F8',
+        borderRadius: 10,
+        padding: 10,
+    },
+    quantityButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 15,
+    },
+    quantityText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.text,
+        minWidth: 30,
+        textAlign: 'center',
     },
 });
