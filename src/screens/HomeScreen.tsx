@@ -13,7 +13,7 @@ import CustomAlert from '@/components/CustomAlert';
 
 export default function HomeScreen({ navigation }: any) {
 
-    const ADMIN_DEVICE = '1234';
+    const ADMIN_DEVICE = '@1010@';
     const [showExitAlert, setShowExitAlert] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [logoPress, setLogoPress] = useState(0);
