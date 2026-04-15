@@ -98,7 +98,7 @@ export default function MenuScreen({ navigation }: any) {
         }, [])
     );
 
-    const handleAddToCart = (productId: string) => {
+    const handleAddToCart = (productId: string, quantity: number = 1) => {
         const product = products.find(p => p.id === productId);
 
         if (product?.hasStockControl && (!product.stock || product.stock <= 0)) {
@@ -106,22 +106,31 @@ export default function MenuScreen({ navigation }: any) {
             return;
         }
 
-        const wasAdded = addToCart(productId, products);
+        const wasAdded = addToCart(productId, products, quantity);
         if (wasAdded) {
-            showAlert('✅ Adicionado!', 'Produto adicionado ao carrinho');
+            showAlert('✅ Adicionado!', `${quantity}x ${product?.name} adicionado ao carrinho`);
         }
     };
 
     return (
         <ScrollView ref={scrollViewRef} style={styles.container}>
             <Text style={styles.title}>Cardápio</Text>
-
-            <TextInput
-                style={styles.searchInput}
-                placeholder="🔍 Buscar produto..."
-                value={searchText}
-                onChangeText={setSearchText}
-            />
+            <View style={styles.searchContainer}>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="🔍 Buscar produto..."
+                    value={searchText}
+                    onChangeText={setSearchText}
+                />
+                {searchText.length > 0 && (
+                    <TouchableOpacity
+                        style={styles.clearButton}
+                        onPress={() => setSearchText('')}
+                    >
+                        <MaterialIcons name="close" size={20} color="#999" />
+                    </TouchableOpacity>
+                )}
+            </View>
 
             {getTotalItems() > 0 && (
                 <TouchableOpacity
@@ -163,7 +172,7 @@ export default function MenuScreen({ navigation }: any) {
                             <View style={styles.productsContainer}>
                                 {products.map(product => (
                                     <View key={product.id} style={styles.productCard}>
-                                        <TouchableOpacity 
+                                        <TouchableOpacity
                                             style={styles.productTouchable}
                                             onPress={() => setSelectedProduct(product)}
                                             activeOpacity={0.7}
@@ -349,6 +358,10 @@ const styles = StyleSheet.create({
         color: '#666',
         fontStyle: 'italic',
     },
+    searchContainer: {
+        position: 'relative',
+        marginBottom: 20,
+    },
     searchInput: {
         backgroundColor: '#FFFFFF',
         borderWidth: 2,
@@ -356,8 +369,9 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         padding: 15,
         paddingHorizontal: 20,
+        paddingRight: 50,
         fontSize: 16,
-        marginBottom: 20,
+        // marginBottom: 20,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -366,6 +380,14 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 3.84,
         elevation: 5,
+    },
+    clearButton: {
+        position: 'absolute',
+        right: 15,
+        top: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        paddingHorizontal: 5,
     },
     productImage: {
         width: 80,
