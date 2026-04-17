@@ -45,7 +45,7 @@ export default function MenuScreen({ navigation }: any) {
 
     const menuByCategory = productsWithNormalizedName
         .filter(product =>
-            product.available &&
+            // product.available &&
             product.normalizedName.includes(normalizeSearch)
         )
         .sort((a, b) => a.name.localeCompare(b.name))
@@ -171,17 +171,16 @@ export default function MenuScreen({ navigation }: any) {
                         {isExpanded && (
                             <View style={styles.productsContainer}>
                                 {products.map(product => (
-                                    <View key={product.id} style={styles.productCard}>
+                                    <View key={product.id} style={[styles.productCard, !product.available && styles.productCardUnavailable]}>
                                         <TouchableOpacity
                                             style={styles.productTouchable}
-                                            onPress={() => setSelectedProduct(product)}
-                                            activeOpacity={0.7}
+                                            onPress={() => product.available && setSelectedProduct(product)}
+                                            activeOpacity={product.available ? 0.7 : 1}
                                         >
-                                            {/* Imagem do Produto */}
                                             {product.image ? (
                                                 <Image
                                                     source={{ uri: product.image }}
-                                                    style={styles.productImage}
+                                                    style={[styles.productImage, !product.available && styles.imageUnavailable]}
                                                     resizeMode="cover"
                                                 />
                                             ) : (
@@ -191,15 +190,24 @@ export default function MenuScreen({ navigation }: any) {
                                             )}
 
                                             <View style={styles.productInfo}>
-                                                <Text style={styles.productName}>{product.name}</Text>
-                                                <Text style={styles.productDescription} numberOfLines={2}>{product.description}</Text>
-                                                <Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
+                                                <Text style={[styles.productName, !product.available && styles.textUnavailable]}>
+                                                    {product.name}
+                                                </Text>
+                                                <Text style={styles.productDescription} numberOfLines={2}>
+                                                    {product.description}
+                                                </Text>
+                                                {product.available ? (
+                                                    <Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
+                                                ) : (
+                                                    <Text style={styles.unavailableLabel}>Indisponível</Text>
+                                                )}
                                             </View>
                                         </TouchableOpacity>
 
                                         <TouchableOpacity
-                                            style={styles.addButton}
-                                            onPress={() => handleAddToCart(product.id)}
+                                            style={[styles.addButton, !product.available && styles.addButtonDisabled]}
+                                            onPress={() => product.available && handleAddToCart(product.id)}
+                                            disabled={!product.available}
                                         >
                                             <MaterialIcons name="add-shopping-cart" size={24} color="white" />
                                         </TouchableOpacity>
@@ -408,5 +416,24 @@ const styles = StyleSheet.create({
     productTouchable: {
         flex: 1,
         flexDirection: 'row',
+    },
+    productCardUnavailable: {
+        backgroundColor: '#F0F0F0',
+        opacity: 0.6,
+    },
+    textUnavailable: {
+        color: '#AAAAAA',
+    },
+    imageUnavailable: {
+        opacity: 0.4,
+    },
+    unavailableLabel: {
+        fontSize: 13,
+        color: '#AAAAAA',
+        fontStyle: 'italic',
+        fontWeight: '500',
+    },
+    addButtonDisabled: {
+        backgroundColor: '#BBBBBB',
     },
 });
