@@ -177,7 +177,7 @@ export default function CartScreen({ navigation }: any) {
         }
 
         message += `*TOTAL: R$ ${getTotal.toFixed(2)}*\n\n`;
-        message += `⏱️ Prazo: 40-60 min`;
+        // message += `⏱️ Prazo: 40-60 min`;
 
         return message;
     }, [customerInfo, deliveryType, selectedDeliveryZone, cartItems, getDeliveryFee, getTotal]);
