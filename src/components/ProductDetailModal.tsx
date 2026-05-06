@@ -62,7 +62,7 @@ export default function ProductDetailModal({
                             <MaterialCommunityIcons
                                 name="camera-off"
                                 size={48}
-                                color="#ccc"
+                                color={COLORS.borderDisabled}
                             />
                         </View>
                     )}
@@ -90,7 +90,7 @@ export default function ProductDetailModal({
                             onPress={decreaseQuantity}
                             disabled={quantity <= 1}
                         >
-                            <MaterialCommunityIcons name="minus" size={20} color={quantity <= 1 ? '#ccc' : COLORS.primary} />
+                            <MaterialCommunityIcons name="minus" size={20} color={quantity <= 1 ? COLORS.borderDisabled : COLORS.primary} />
                         </TouchableOpacity>
                         <Text style={styles.quantityText}>{quantity}</Text>
                         <TouchableOpacity style={styles.quantityButton} onPress={increaseQuantity}>
@@ -144,12 +144,12 @@ const styles = StyleSheet.create({
     modalImage: {
         width: '100%',
         height: 200,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: COLORS.backgroundLightGray,
     },
     modalImagePlaceholder: {
         width: '100%',
         height: 200,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: COLORS.backgroundPlaceholder,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     },
     modalDescription: {
         fontSize: 16,
-        color: '#666',
+        color: COLORS.gray,
         lineHeight: 22,
         marginBottom: 15,
     },
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     },
     modalStock: {
         fontSize: 14,
-        color: '#999',
+        color: COLORS.darkGray,
         fontStyle: 'italic',
     },
     modalActions: {
@@ -184,12 +184,12 @@ const styles = StyleSheet.create({
         padding: 20,
         gap: 10,
         borderTopWidth: 1,
-        borderTopColor: '#f0f0f0',
+        borderTopColor: COLORS.borderGray,
     },
     modalCancelButton: {
         flex: 1,
         padding: 15,
-        backgroundColor: '#E0E0E0',
+        backgroundColor: COLORS.border,
         borderRadius: 10,
         alignItems: 'center',
     },
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 20,
-        backgroundColor: '#F8F8F8',
+        backgroundColor: COLORS.backgroundSection,
         borderRadius: 10,
         padding: 10,
     },

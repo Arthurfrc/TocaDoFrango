@@ -195,10 +195,10 @@ const styles = StyleSheet.create({
     },
     section: {
         marginBottom: 25,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.background,
         borderRadius: 12,
         padding: 20,
-        shadowColor: '#000',
+        shadowColor: COLORS.shadow,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     contactInfo: {
-        backgroundColor: '#F8F9FA',
+        backgroundColor: COLORS.backgroundCard,
         borderRadius: 8,
         padding: 15,
         marginTop: 10,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
         marginTop: 20,
         marginBottom: 40,
         padding: 20,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: COLORS.backgroundCard,
         borderRadius: 12,
     },
     footerText: {

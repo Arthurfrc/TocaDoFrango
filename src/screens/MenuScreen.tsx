@@ -127,7 +127,7 @@ export default function MenuScreen({ navigation }: any) {
                         style={styles.clearButton}
                         onPress={() => setSearchText('')}
                     >
-                        <MaterialIcons name="close" size={20} color="#999" />
+                        <MaterialIcons name="close" size={20} color={COLORS.darkGray} />
                     </TouchableOpacity>
                 )}
             </View>
@@ -185,7 +185,7 @@ export default function MenuScreen({ navigation }: any) {
                                                 />
                                             ) : (
                                                 <View style={styles.productImagePlaceholder}>
-                                                    <MaterialCommunityIcons name="camera-off" size={24} color="#ccc" />
+                                                    <MaterialCommunityIcons name="camera-off" size={24} color={COLORS.borderDisabled} />
                                                 </View>
                                             )}
 
@@ -257,14 +257,14 @@ const styles = StyleSheet.create({
     categoryHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FAFAFA',
+        backgroundColor: COLORS.backgroundLight,
         borderLeftWidth: 3,
-        borderLeftColor: '#FF6B35',
+        borderLeftColor: COLORS.accent,
         padding: 15,
         borderRadius: 10,
         marginBottom: 10,
         elevation: 4,
-        shadowColor: '#000',
+        shadowColor: COLORS.shadow,
         shadowOffset: {
             width: 0,
             height: 2,
@@ -288,24 +288,24 @@ const styles = StyleSheet.create({
     },
     categoryCount: {
         fontSize: 14,
-        color: '#666',
+        color: COLORS.gray,
         marginLeft: 10,
     },
     productsContainer: {
         paddingLeft: 20,
     },
     productCard: {
-        backgroundColor: '#E8E8E8',
+        backgroundColor: COLORS.backgroundGray,
         padding: 15,
         marginBottom: 10,
         borderRadius: 10,
         borderWidth: 0.5,
-        borderColor: '#F0F0F0',
+        borderColor: COLORS.backgroundLightGray,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         elevation: 3,
-        shadowColor: '#000',
+        shadowColor: COLORS.shadow,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.12,
         shadowRadius: 3,
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     },
     productDescription: {
         fontSize: 14,
-        color: '#666',
+        color: COLORS.shadow,
         marginBottom: 5,
     },
     productPrice: {
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     },
     stockText: {
         fontSize: 12,
-        color: '#666',
+        color: COLORS.gray,
         fontStyle: 'italic',
     },
     searchContainer: {
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     searchInput: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.background,
         borderWidth: 2,
         borderColor: COLORS.primary,
         borderRadius: 25,
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
         paddingRight: 50,
         fontSize: 16,
         // marginBottom: 20,
-        shadowColor: '#000',
+        shadowColor: COLORS.shadow,
         shadowOffset: {
             width: 0,
             height: 2,
@@ -401,14 +401,14 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 8,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: COLORS.backgroundLightGray,
         marginRight: 12,
     },
     productImagePlaceholder: {
         width: 80,
         height: 80,
         borderRadius: 8,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: COLORS.backgroundPlaceholder,
         marginRight: 12,
         justifyContent: 'center',
         alignItems: 'center',
@@ -418,22 +418,22 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
     },
     productCardUnavailable: {
-        backgroundColor: '#F0F0F0',
+        backgroundColor: COLORS.backgroundLightGray,
         opacity: 0.6,
     },
     textUnavailable: {
-        color: '#AAAAAA',
+        color: COLORS.unavailable,
     },
     imageUnavailable: {
         opacity: 0.4,
     },
     unavailableLabel: {
         fontSize: 13,
-        color: '#AAAAAA',
+        color: COLORS.unavailable,
         fontStyle: 'italic',
         fontWeight: '500',
     },
     addButtonDisabled: {
-        backgroundColor: '#BBBBBB',
+        backgroundColor: COLORS.disabled,
     },
 });

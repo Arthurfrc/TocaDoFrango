@@ -119,11 +119,11 @@ const styles = StyleSheet.create({
     },
     input: {
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: COLORS.borderInput,
         borderRadius: 8,
         padding: 12,
         fontSize: 16,
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.background,
     },
     modalActions: {
         flexDirection: 'row',
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     cancelButton: {
-        backgroundColor: '#ccc',
+        backgroundColor: COLORS.borderDisabled,
     },
     saveButton: {
         backgroundColor: COLORS.primary,

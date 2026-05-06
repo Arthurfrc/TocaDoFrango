@@ -340,12 +340,12 @@ const styles = StyleSheet.create({
     },
     zoneItem: {
         flexDirection: 'row',
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.background,
         padding: 15,
         borderRadius: 10,
         marginBottom: 10,
         elevation: 2,
-        shadowColor: '#000',
+        shadowColor: COLORS.shadow,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
@@ -430,11 +430,11 @@ const styles = StyleSheet.create({
     },
     input: {
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: COLORS.borderInput,
         borderRadius: 8,
         padding: 12,
         fontSize: 16,
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.background,
     },
     modalActions: {
         flexDirection: 'row',
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     cancelButton: {
-        backgroundColor: '#ccc',
+        backgroundColor: COLORS.borderDisabled,
     },
     saveButton: {
         backgroundColor: COLORS.primary,

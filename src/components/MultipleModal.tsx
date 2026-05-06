@@ -90,7 +90,7 @@ export default function MultipleModal({
                 keyboardType={field.keyboardType || 'default'}
                 multiline={field.multiline}
                 maxLength={field.maxLength}
-                placeholderTextColor="#aaa"
+                placeholderTextColor="COLORS.unavailable"
                 textAlign={field.textAlign || 'left'}
             />
         </View>
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     input: {
-        backgroundColor: '#FFF',
+        backgroundColor: COLORS.background,
         borderWidth: 1,
         borderColor: COLORS.border,
         borderRadius: 8,
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     cancel: {
-        backgroundColor: '#ccc',
+        backgroundColor: COLORS.borderDisabled,
         padding: 15,
         borderRadius: 10,
         marginTop: 10,

@@ -194,7 +194,7 @@ export default function CustomProductModal({
                                 <TextInput
                                     style={styles.priceInput}
                                     placeholder="0,00"
-                                    placeholderTextColor="#999"
+                                    placeholderTextColor={COLORS.darkGray}
                                     value={formData.price}
                                     onChangeText={(text) => setFormData({ ...formData, price: formatPrice(text) })}
                                     keyboardType="numeric"
@@ -213,7 +213,7 @@ export default function CustomProductModal({
                             >
                                 <Text style={[
                                     styles.categorySelectorText,
-                                    !selectedCategoryId && { color: '#999' }
+                                    !selectedCategoryId && { color: COLORS.darkGray }
                                 ]}>
                                     {categories.find(c => c.id === selectedCategoryId)?.name || 'Selecione uma categoria'}
                                 </Text>
@@ -232,7 +232,7 @@ export default function CustomProductModal({
                                     <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
                                 ) : (
                                     <View style={styles.imagePlaceholder}>
-                                        <MaterialCommunityIcons name="camera-off" size={32} color="#999" />
+                                        <MaterialCommunityIcons name="camera-off" size={32} color={COLORS.darkGray} />
                                         <Text style={styles.imagePlaceholderText}>Nenhuma foto</Text>
                                         <Text style={styles.imagePlaceholderSubtext}>Toque para adicionar</Text>
                                     </View>
@@ -244,7 +244,7 @@ export default function CustomProductModal({
                                     style={styles.removeImageButton}
                                     onPress={() => setSelectedImage(null)}
                                 >
-                                    <FontAwesome5 name="trash" size={14} color="#FF5252" />
+                                    <FontAwesome5 name="trash" size={14} color={COLORS.exit} />
                                     <Text style={styles.removeImageText}>Remover foto</Text>
                                 </TouchableOpacity>
                             )}
@@ -315,7 +315,7 @@ export default function CustomProductModal({
                             >
                                 <Text style={[
                                     styles.modalButtonTextCancel,
-                                    uploadingImage && { color: '#ccc' }
+                                    uploadingImage && { color: COLORS.borderDisabled }
                                 ]}>Cancelar</Text>
                             </TouchableOpacity>
 
@@ -371,11 +371,11 @@ const styles = StyleSheet.create({
     },
     input: {
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: COLORS.borderInput,
         borderRadius: 8,
         padding: 12,
         fontSize: 16,
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.background,
     },
     textArea: {
         height: 80,
@@ -383,10 +383,10 @@ const styles = StyleSheet.create({
     },
     categorySelector: {
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: COLORS.borderInput,
         borderRadius: 8,
         padding: 12,
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.background,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     cancelButton: {
-        backgroundColor: '#ccc',
+        backgroundColor: COLORS.borderDisabled,
     },
     saveButton: {
         backgroundColor: COLORS.primary,
@@ -457,9 +457,9 @@ const styles = StyleSheet.create({
     priceContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.background,
         // borderWidth: 1,
-        // borderColor: '#ddd',
+        // borderColor: COLORS.borderInput,
         // borderRadius: 8,
         padding: 12,
     },
@@ -477,10 +477,10 @@ const styles = StyleSheet.create({
     },
     imageSelector: {
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: COLORS.borderInput,
         borderRadius: 8,
         overflow: 'hidden',
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.background,
     },
     imagePreview: {
         width: '100%',
@@ -492,11 +492,11 @@ const styles = StyleSheet.create({
         height: 150,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f5f5f5',
+        backgroundColor: COLORS.backgroundPlaceholder,
     },
     imagePlaceholderText: {
         marginTop: 8,
-        color: '#999',
+        color: COLORS.darkGray,
         fontSize: 14,
     },
     removeImageButton: {
@@ -508,12 +508,12 @@ const styles = StyleSheet.create({
     },
     removeImageText: {
         marginLeft: 5,
-        color: '#FF5252',
+        color: COLORS.exit,
         fontSize: 12,
     },
     imagePlaceholderSubtext: {
         marginTop: 4,
-        color: '#bbb',
+        color: COLORS.disabled,
         fontSize: 12,
     },
 });

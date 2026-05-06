@@ -6,6 +6,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AppNavigator from '@/navigation/AppNavigator';
 import { MenuProvider } from '@/context/MenuContext';
 import { CartProvider } from '@/context/CartContext';
+import { COLORS } from '@/constants/colors';
 
 export default function App() {
   return (
@@ -25,6 +26,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background,
   },
 });

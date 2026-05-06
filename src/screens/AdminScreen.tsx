@@ -466,7 +466,7 @@ export default function AdminScreen({ navigation }: any) {
 																	style={styles.actionButton}
 																	onPress={() => handleDeleteCategory(category.id)}
 																>
-																	<FontAwesome5 name="trash" size={16} color="#FF5252" />
+																	<FontAwesome5 name="trash" size={16} color={COLORS.exit} />
 																</TouchableOpacity>
 
 																<TouchableOpacity
@@ -497,7 +497,7 @@ export default function AdminScreen({ navigation }: any) {
 																		/>
 																	) : (
 																		<View style={styles.adminProductImagePlaceholder}>
-																			<MaterialCommunityIcons name="camera-off" size={20} color="#ccc" />
+																			<MaterialCommunityIcons name="camera-off" size={20} color={COLORS.borderDisabled} />
 																		</View>
 																	)}
 																	<View style={styles.productInfo}>
@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
 		paddingVertical: 6,
 		minWidth: 200,
 		elevation: 8,
-		shadowColor: '#000',
+		shadowColor: COLORS.shadow,
 		shadowOffset: { width: 0, height: 4 },
 		shadowOpacity: 0.15,
 		shadowRadius: 8,
@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
 	},
 	dropdownDivider: {
 		height: 1,
-		backgroundColor: '#EEEEEE',
+		backgroundColor: COLORS.borderLight,
 		marginHorizontal: 12,
 	},
 	title: {
@@ -840,16 +840,16 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 	},
 	settingsButton: {
-		backgroundColor: '#4A90E2',
+		backgroundColor: COLORS.adminBlue,
 	},
 	publishButton: {
-		backgroundColor: '#4CAF50',
+		backgroundColor: COLORS.success,
 	},
 	publishButtonDisabled: {
 		backgroundColor: 'rgba(255,255,255,0.1)',
 	},
 	discardButton: {
-		backgroundColor: '#FF9800',
+		backgroundColor: COLORS.adminOrange,
 	},
 	sectionContainer: {
 		marginBottom: 30,
@@ -877,7 +877,7 @@ const styles = StyleSheet.create({
 	emptyContainer: {
 		alignItems: 'center',
 		padding: 30,
-		backgroundColor: '#f5f5f5',
+		backgroundColor: COLORS.backgroundPlaceholder,
 		borderRadius: 10,
 	},
 	emptyText: {
@@ -887,13 +887,13 @@ const styles = StyleSheet.create({
 	},
 	emptySubtext: {
 		fontSize: 14,
-		color: '#666',
+		color: COLORS.gray,
 		textAlign: 'center',
 	},
 	emptySubContainer: {
 		alignItems: 'center',
 		padding: 20,
-		backgroundColor: '#f9f9f9',
+		backgroundColor: COLORS.backgroundEmpty,
 		borderRadius: 8,
 		marginLeft: 20,
 		marginTop: 5,
@@ -905,8 +905,8 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'center',
-		backgroundColor: '#EEE',
-		borderColor: '#E9ECEF',
+		backgroundColor: COLORS.borderLight,
+		borderColor: COLORS.borderLightGray,
 		padding: 15,
 		borderRadius: 10,
 		marginBottom: 5,
@@ -919,7 +919,7 @@ const styles = StyleSheet.create({
 	},
 	categoryCount: {
 		fontSize: 12,
-		color: '#666',
+		color: COLORS.gray,
 		marginLeft: 8,
 	},
 	categoryActions: {
@@ -930,7 +930,7 @@ const styles = StyleSheet.create({
 		width: 32,
 		height: 32,
 		borderRadius: 16,
-		backgroundColor: '#f5f5f5',
+		backgroundColor: COLORS.backgroundPlaceholder,
 		justifyContent: 'center',
 		alignItems: 'center',
 	},
@@ -938,7 +938,7 @@ const styles = StyleSheet.create({
 		paddingLeft: 20,
 	},
 	productCard: {
-		backgroundColor: '#FFF',
+		backgroundColor: COLORS.background,
 		padding: 15,
 		marginBottom: 5,
 		borderRadius: 10,
@@ -957,7 +957,7 @@ const styles = StyleSheet.create({
 	},
 	productDescription: {
 		fontSize: 12,
-		color: '#666',
+		color: COLORS.gray,
 		marginBottom: 3,
 	},
 	productPrice: {
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
 	},
 	stockInfo: {
 		fontSize: 10,
-		color: '#666',
+		color: COLORS.gray,
 		fontStyle: 'italic',
 		marginTop: 2,
 	},
@@ -984,13 +984,13 @@ const styles = StyleSheet.create({
 		gap: 5,
 	},
 	editButton: {
-		backgroundColor: '#FFF',
+		backgroundColor: COLORS.background,
 	},
 	toggleButton: {
-		backgroundColor: '#FFF',
+		backgroundColor: COLORS.background,
 	},
 	deleteButton: {
-		backgroundColor: '#FFF',
+		backgroundColor: COLORS.background,
 	},
 	modalOverlay: {
 		flex: 1,
@@ -1001,12 +1001,12 @@ const styles = StyleSheet.create({
 	input: {
 		width: '100%',
 		height: 50,
-		backgroundColor: '#FFF',
+		backgroundColor: COLORS.background,
 		borderRadius: 10,
 		paddingHorizontal: 15,
 		fontSize: 16,
 		borderWidth: 1,
-		borderColor: '#DDD',
+		borderColor: COLORS.borderInput,
 		marginBottom: 20,
 	},
 	saveButton: {
@@ -1016,7 +1016,7 @@ const styles = StyleSheet.create({
 		borderRadius: 25,
 	},
 	saveButtonText: {
-		color: '#FFF',
+		color: COLORS.background,
 		fontSize: 16,
 		fontWeight: 'bold',
 	},
@@ -1049,7 +1049,7 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 	},
 	cancelButton: {
-		backgroundColor: '#E0E0E0',
+		backgroundColor: 'COLORS.border',
 	},
 	modalButtonTextCancel: {
 		fontWeight: 'bold',
@@ -1058,7 +1058,7 @@ const styles = StyleSheet.create({
 	categoryOption: {
 		padding: 15,
 		borderBottomWidth: 1,
-		borderBottomColor: '#eee',
+		borderBottomColor: COLORS.borderLight,
 	},
 	categoryOptionText: {
 		fontSize: 16,
@@ -1113,7 +1113,7 @@ const styles = StyleSheet.create({
 	priceContainerFee: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: '#fff',
+		backgroundColor: COLORS.background,
 		borderRadius: 8,
 		padding: 12,
 	},
@@ -1133,14 +1133,14 @@ const styles = StyleSheet.create({
 		width: 50,
 		height: 50,
 		borderRadius: 6,
-		backgroundColor: '#f0f0f0',
+		backgroundColor: COLORS.borderGray,
 		marginRight: 10,
 	},
 	adminProductImagePlaceholder: {
 		width: 50,
 		height: 50,
 		borderRadius: 6,
-		backgroundColor: '#f5f5f5',
+		backgroundColor: COLORS.backgroundPlaceholder,
 		marginRight: 10,
 		justifyContent: 'center',
 		alignItems: 'center',

@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     alertBox: {
-        backgroundColor: '#FFF',
+        backgroundColor: COLORS.background,
         borderRadius: 15,
         padding: 25,
         margin: 20,
@@ -110,8 +110,8 @@ const styles = StyleSheet.create({
         padding: 15,
         fontSize: 16,
         marginBottom: 20,
-        backgroundColor: '#FFF',
-        color: '#000',
+        backgroundColor: COLORS.background,
+        color: COLORS.shadow,
     },
     buttonContainer: {
         flexDirection: 'row',
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     confirmButtonText: {
-        color: '#FFF',
+        color: COLORS.background,
         textAlign: 'center',
         fontWeight: 'bold',
     },

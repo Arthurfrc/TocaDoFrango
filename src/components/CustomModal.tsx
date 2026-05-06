@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     cancel: {
-        backgroundColor: '#ccc',
+        backgroundColor: COLORS.borderDisabled,
         padding: 15,
         borderRadius: 10,
         marginTop: 10,

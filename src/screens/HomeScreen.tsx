@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         alignItems: 'center',
         elevation: 3,
-        shadowColor: '#000',
+        shadowColor: COLORS.shadow,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     },
     infoSection: {
         padding: 20,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: COLORS.backgroundPlaceholder,
         margin: 20,
         borderRadius: 15,
     },
