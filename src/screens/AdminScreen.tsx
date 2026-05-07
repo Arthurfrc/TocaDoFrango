@@ -159,6 +159,11 @@ export default function AdminScreen({ navigation }: any) {
 			id: 'terms',
 			title: '📋 Termos de Serviço',
 			onPress: () => navigation.navigate('TermsOfService')
+		},
+		{
+			id: 'stats',
+			title: '📊 Estatísticas',
+			onPress: () => navigation.navigate('AdminStats')
 		}
 	];
 
@@ -319,7 +324,19 @@ export default function AdminScreen({ navigation }: any) {
 						onPress={() => setHeaderMenuOpen(false)}
 					/>
 					<View style={styles.dropdownMenu}>
-						<TouchableOpacity
+						{settingsOptions.map((option) => (
+							<TouchableOpacity
+								key={option.id}
+								style={styles.dropdownItem}
+								onPress={() => {
+									setHeaderMenuOpen(false);
+									option.onPress();
+								}}
+							>
+								<Text style={styles.dropdownItemText}>{option.title}</Text>
+							</TouchableOpacity>
+						))}
+						{/* <TouchableOpacity
 							style={styles.dropdownItem}
 							onPress={() => {
 								setHeaderMenuOpen(false);
@@ -343,9 +360,9 @@ export default function AdminScreen({ navigation }: any) {
 							<Text style={styles.dropdownItemText}>Zonas de Entrega</Text>
 						</TouchableOpacity>
 
-						<View style={styles.dropdownDivider} />
-
-						{/* <TouchableOpacity
+						<View style={styles.dropdownDivider} /> 
+						
+						<TouchableOpacity
 							style={styles.dropdownItem}
 							onPress={() => {
 								setHeaderMenuOpen(false);

@@ -5,6 +5,7 @@ import { Product } from '@/types';
 import { menuService } from '@/services/menuService';
 import CustomAlert from '@/components/CustomAlert';
 import { DeliveryZone } from '@/services/deliveryService';
+import { orderService, OrderItem } from '@/services/orderService';
 
 interface CartContextType {
     cart: { [key: string]: number };
@@ -21,6 +22,7 @@ interface CartContextType {
     setSelectedDeliveryZone: (zone: DeliveryZone | null) => void;
     selectedDeliveryZoneId: string | null;
     setSelectedDeliveryZoneId: (zoneId: string | null) => void;
+    finalizeOrder: (customerInfo: { name: string; phone: string; address?: string }) => Promise<string>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -128,7 +130,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
 
     const updateQuantity = (productId: string, quantity: number, products: Product[]) => {
-        
+
         if (quantity <= 0) {
             removeFromCart(productId);
         } else {
@@ -152,6 +154,55 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setCart({});
     };
 
+    const finalizeOrder = async (customerInfo: { name: string; phone: string; address?: string }): Promise<string> => {
+        try {
+            // Buscar produtos atuais para calcular totais
+            const products = await menuService.getMenu();
+
+            // Criar itens do pedido
+            const orderItems: OrderItem[] = Object.entries(cart).map(([productId, quantity]) => {
+                const product = products.find(p => p.id === productId);
+                return {
+                    id: productId,
+                    name: product?.name || 'Produto',
+                    price: product?.price || 0,
+                    quantity,
+                    category: product?.categoryId
+                };
+            });
+
+            // Calcular totais
+            const subtotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const deliveryFee = getDeliveryFee();
+            const total = subtotal + deliveryFee;
+
+            // Salvar pedido
+            const orderId = await orderService.saveOrder({
+                items: orderItems,
+                subtotal,
+                deliveryFee,
+                total,
+                deliveryType: deliveryType!,
+                deliveryZone: selectedDeliveryZone || undefined,
+                customerInfo,
+                status: 'pending'
+            });
+
+            // Diminuir estoque
+            for (const item of orderItems) {
+                await decreaseStock(item.id, products, item.quantity);
+            }
+
+            // Limpar carrinho
+            clearCart();
+
+            return orderId;
+        } catch (error) {
+            console.error('Erro ao finalizar pedido:', error);
+            throw error;
+        }
+    };
+
     return (
         <CartContext.Provider value={{
             cart,
@@ -167,7 +218,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
             selectedDeliveryZone,
             setSelectedDeliveryZone,
             selectedDeliveryZoneId,
-            setSelectedDeliveryZoneId
+            setSelectedDeliveryZoneId,
+            finalizeOrder
         }}>
             {children}
             <CustomAlert

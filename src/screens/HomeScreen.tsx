@@ -157,6 +157,9 @@ export default function HomeScreen({ navigation }: any) {
 
             {/* Informações */}
             <View style={styles.infoSection}>
+                <Text style={styles.sectionTitle}>📦 Faça seu pedido</Text>
+                <Text style={styles.infoText}>Segunda à sexta até as 18h</Text>
+
                 <Text style={styles.sectionTitle}>⏰ Horário de Funcionamento</Text>
                 <Text style={styles.infoText}>Sábado e Domingo: 10h às 15h</Text>
 
