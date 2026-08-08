@@ -30,7 +30,18 @@
       ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.arthurfrc.tocadofrango"
+      "package": "com.arthurfrc.tocadofrango",
+      "manifest": {
+        "application": {
+          "activity": [
+            {
+              "android:name": "com.google.mlkit.vision.codescanner.internal.GmsBarcodeScanningDelegateActivity",
+              "android:screenOrientation": "unspecified",
+              "tools:replace": "android:screenOrientation"
+            }
+          ]
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
