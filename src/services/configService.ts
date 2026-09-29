@@ -3,6 +3,15 @@ import { db } from '@/config/firebase';
 
 export interface ConfigData {
     whatsappNumber: string;
+    // Horários separados
+    businessDays: string;      // "Segunda à sexta\nSábado e Domingo"
+    businessHours: string;     // "até as 18h\n10h às 15h"
+    // Endereço separado
+    addressStreet: string;     // Rua
+    addressNumber: string;     // Número
+    addressNeighborhood: string; // Bairro
+    addressCity: string;       // Cidade
+    addressState: string;      // Estado
     updatedAt: Date;
 }
 
@@ -22,6 +31,13 @@ export const configService = {
                 // Se não existir, retorna configuração padrão
                 return {
                     whatsappNumber: '5584999397770',
+                    businessDays: 'Domingo',
+                    businessHours: '10h às 15h',
+                    addressStreet: 'Rua da Consolação',
+                    addressNumber: '900',
+                    addressNeighborhood: 'Emaús',
+                    addressCity: 'Parnamirim',
+                    addressState: 'RN',
                     updatedAt: new Date()
                 };
             }
@@ -29,6 +45,13 @@ export const configService = {
             console.error('Erro ao buscar configurações:', error);
             return {
                 whatsappNumber: '5584999397770',
+                businessDays: 'Segunda à sexta\nSábado e Domingo',
+                businessHours: 'até as 18h\n10h às 15h',
+                addressStreet: 'Rua da Consolação',
+                addressNumber: '900',
+                addressNeighborhood: 'Emaús',
+                addressCity: 'Parnamirim',
+                addressState: 'RN',
                 updatedAt: new Date()
             };
         }

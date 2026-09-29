@@ -24,7 +24,7 @@ import {
 import { COLORS } from '@/constants/colors';
 import { Product, Category } from '@/types';
 import { useMenu } from '@/context/MenuContext';
-import { configService } from '@/services/configService';
+import { configService, ConfigData } from '@/services/configService';
 
 import CustomAlert from '@/components/CustomAlert';
 import CustomModal from '@/components/CustomModal';
@@ -85,6 +85,22 @@ export default function AdminScreen({ navigation }: any) {
 	const [adminWhatsApp, setAdminWhatsApp] = useState('');
 	const [adminInputNumber, setAdminInputNumber] = useState('');
 
+	// NOVOS ESTADOS PARA AS CONFIGURAÇÕES
+	const [showBusinessHoursModal, setShowBusinessHoursModal] = useState(false);
+	const [businessDaysInput, setBusinessDaysInput] = useState('');
+	const [businessHoursInput, setBusinessHoursInput] = useState('');
+
+	const [showLocationModal, setShowLocationModal] = useState(false);
+	const [locationForm, setLocationForm] = useState({
+		street: '',
+		number: '',
+		neighborhood: '',
+		city: '',
+		state: '',
+	});
+
+	const [currentConfig, setCurrentConfig] = useState<ConfigData | null>(null);
+
 	const [categoriesExpanded, setCategoriesExpanded] = useState(true);
 	const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
@@ -143,7 +159,37 @@ export default function AdminScreen({ navigation }: any) {
 		{
 			id: 'whatsapp',
 			title: '📱 WhatsApp Admin',
-			onPress: () => setShowWhatsAppModal(true)
+			onPress: () => {
+				setAdminInputNumber(getDisplayWhatsApp());
+				setShowWhatsAppModal(true);
+			}
+		},
+		{
+			id: 'businessHours',
+			title: '⏰ Horário de Funcionamento',
+			onPress: () => {
+				if (currentConfig) {
+					setBusinessDaysInput(currentConfig.businessDays);
+					setBusinessHoursInput(currentConfig.businessHours);
+				}
+				setShowBusinessHoursModal(true);
+			}
+		},
+		{
+			id: 'location',
+			title: '📍 Endereço',
+			onPress: () => {
+				if (currentConfig) {
+					setLocationForm({
+						street: currentConfig.addressStreet,
+						number: currentConfig.addressNumber,
+						neighborhood: currentConfig.addressNeighborhood,
+						city: currentConfig.addressCity,
+						state: currentConfig.addressState
+					});
+				}
+				setShowLocationModal(true);
+			}
 		},
 		{
 			id: 'delivery',
@@ -213,6 +259,7 @@ export default function AdminScreen({ navigation }: any) {
 		try {
 			const config = await configService.getConfig();
 			setAdminWhatsApp(config.whatsappNumber);
+			setCurrentConfig(config);
 		} catch (error) {
 			console.error('Erro ao carregar WhatsApp:', error);
 			setAdminWhatsApp('');
@@ -255,6 +302,36 @@ export default function AdminScreen({ navigation }: any) {
 		} catch (error) {
 			console.error('Erro ao salvar WhatsApp:', error);
 			Alert.alert('Erro', 'Não foi possível salvar o número do WhatsApp');
+		}
+	};
+
+	// NOVAS FUNÇÕES PARA SALVAR CONFIGURAÇÕES
+	const saveBusinessHours = async (days: string, hours: string) => {
+		try {
+			await configService.saveConfig({
+				businessDays: days,
+				businessHours: hours
+			});
+			Alert.alert('Sucesso', 'Horário de funcionamento atualizado!');
+		} catch (error) {
+			console.error('Erro ao salvar horário:', error);
+			Alert.alert('Erro', 'Não foi possível salvar o horário');
+		}
+	};
+
+	const saveLocation = async (location: typeof locationForm) => {
+		try {
+			await configService.saveConfig({
+				addressStreet: location.street,
+				addressNumber: location.number,
+				addressNeighborhood: location.neighborhood,
+				addressCity: location.city,
+				addressState: location.state
+			});
+			Alert.alert('Sucesso', 'Endereço atualizado!');
+		} catch (error) {
+			console.error('Erro ao salvar endereço:', error);
+			Alert.alert('Erro', 'Não foi possível salvar o endereço');
 		}
 	};
 
@@ -734,6 +811,88 @@ export default function AdminScreen({ navigation }: any) {
 				keyboardType="phone-pad"
 				maxLength={15}
 			/>
+
+			{/* NOVOS MODAIS */}
+			<Modal
+				visible={showBusinessHoursModal}
+				transparent={true}
+				animationType="fade"
+				onRequestClose={() => setShowBusinessHoursModal(false)}
+			>
+				<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+					<View style={styles.modalOverlay}>
+						<View style={styles.modalContent}>
+							<Text style={styles.modalTitle}>⏰ Horário de Funcionamento</Text>
+
+							<Text style={styles.inputLabel}>Dias de Funcionamento</Text>
+							<TextInput
+								style={styles.input}
+								placeholder="Segunda à sexta\nSábado e Domingo"
+								value={businessDaysInput}
+								onChangeText={setBusinessDaysInput}
+								multiline={true}
+								numberOfLines={2}
+							/>
+
+							<Text style={styles.inputLabel}>Horário de Funcionamento</Text>
+							<TextInput
+								style={styles.input}
+								placeholder="até as 18h\n10h às 15h"
+								value={businessHoursInput}
+								onChangeText={setBusinessHoursInput}
+								multiline={true}
+								numberOfLines={2}
+							/>
+
+							<View style={styles.modalButtons}>
+								<TouchableOpacity
+									style={[styles.modalButton, styles.cancelButton]}
+									onPress={() => {
+										setBusinessDaysInput('');
+										setBusinessHoursInput('');
+										setShowBusinessHoursModal(false);
+									}}
+								>
+									<Text style={styles.modalButtonTextCancel}>Cancelar</Text>
+								</TouchableOpacity>
+								<TouchableOpacity
+									style={[styles.modalButton, styles.businessModalSaveButton]}
+									onPress={() => {
+										saveBusinessHours(businessDaysInput, businessHoursInput);
+										setBusinessDaysInput('');
+										setBusinessHoursInput('');
+										setShowBusinessHoursModal(false);
+									}}
+								>
+									<Text style={styles.modalButtonTextSave}>Salvar</Text>
+								</TouchableOpacity>
+							</View>
+						</View>
+					</View>
+				</KeyboardAvoidingView>
+			</Modal>
+
+			<MultipleModal
+				visible={showLocationModal}
+				title="📍 Endereço do Estabelecimento"
+				inputs={[
+					{ id: 'street', label: 'Rua', placeholder: 'Rua da Consolação', value: locationForm.street, onChangeText: (t) => setLocationForm({ ...locationForm, street: t }), row: 1, flex: 7 },
+					{ id: 'number', label: 'Nº', placeholder: '900', value: locationForm.number, onChangeText: (t) => setLocationForm({ ...locationForm, number: t }), row: 1, flex: 3, keyboardType: 'numeric', textAlign: 'center' },
+					{ id: 'neighborhood', label: 'Bairro', placeholder: 'Emaús', value: locationForm.neighborhood, onChangeText: (t) => setLocationForm({ ...locationForm, neighborhood: t }), row: 2, flex: 4 },
+					{ id: 'city', label: 'Cidade', placeholder: 'Parnamirim', value: locationForm.city, onChangeText: (t) => setLocationForm({ ...locationForm, city: t }), row: 2, flex: 4 },
+					{ id: 'state', label: 'UF', placeholder: 'RN', value: locationForm.state, onChangeText: (t) => setLocationForm({ ...locationForm, state: t.toUpperCase() }), row: 2, flex: 2, maxLength: 2, textAlign: 'center' },
+				]}
+				onConfirm={() => {
+					saveLocation(locationForm);
+					setLocationForm({ street: '', number: '', neighborhood: '', city: '', state: '' });
+					setShowLocationModal(false);
+				}}
+				confirmText="Salvar Endereço"
+				onClose={() => {
+					setLocationForm({ street: '', number: '', neighborhood: '', city: '', state: '' });
+					setShowLocationModal(false);
+				}}
+			/>
 		</View >
 	);
 }
@@ -1161,5 +1320,30 @@ const styles = StyleSheet.create({
 		marginRight: 10,
 		justifyContent: 'center',
 		alignItems: 'center',
+	},
+	inputLabel: {
+		fontSize: 16,
+		fontWeight: 'bold',
+		color: COLORS.text,
+		marginBottom: 8,
+		marginTop: 10,
+	},
+	modalButtons: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		marginTop: 20,
+		gap: 10,
+	},
+	businessModalSaveButton: {
+		backgroundColor: COLORS.primary,
+		flex: 1,
+		padding: 15,
+		borderRadius: 10,
+		alignItems: 'center',
+	},
+	modalButtonTextSave: {
+		color: COLORS.background,
+		fontSize: 16,
+		fontWeight: 'bold',
 	},
 });

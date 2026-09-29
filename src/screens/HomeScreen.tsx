@@ -8,6 +8,7 @@ import * as Application from 'expo-application';
 
 import { COLORS } from '@/constants/colors';
 import { deliveryService, DeliveryZone } from '@/services/deliveryService';
+import { configService, ConfigData } from '@/services/configService';
 import InputAlert from '@/components/InputAlert';
 import CustomAlert from '@/components/CustomAlert';
 
@@ -19,6 +20,7 @@ export default function HomeScreen({ navigation }: any) {
     const [logoPress, setLogoPress] = useState(0);
     const [adminUnlocked, setAdminUnlocked] = useState(false);
     const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
+    const [config, setConfig] = useState<ConfigData | null>(null);
 
     const [showDevAlert, setShowDevAlert] = useState(false);
 
@@ -39,6 +41,7 @@ export default function HomeScreen({ navigation }: any) {
         }
         checkId();
         loadDeliveryZones();
+        loadConfig();
 
         // Cleanup do timer quando o componente desmontar
         return () => {
@@ -55,6 +58,29 @@ export default function HomeScreen({ navigation }: any) {
         } catch (error) {
             console.error('Erro ao carregar zonas:', error);
         }
+    };
+
+    const loadConfig = async () => {
+        try {
+            const configData = await configService.getConfig();
+            setConfig(configData);
+        } catch (error) {
+            console.error('Erro ao carregar configurações:', error);
+        }
+    };
+
+    const formatPhone = (phone: string) => {
+        if (!phone) return '';
+        let cleanPhone = phone.replace(/\D/g, '');
+
+        // Remove código do país (55) se existir
+        if (cleanPhone.startsWith('55') && cleanPhone.length > 11) {
+            cleanPhone = cleanPhone.substring(2);
+        }
+
+        if (cleanPhone.length <= 2) return cleanPhone;
+        if (cleanPhone.length <= 7) return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2)}`;
+        return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2, 7)}-${cleanPhone.slice(7)}`;
     };
 
 
@@ -158,19 +184,28 @@ export default function HomeScreen({ navigation }: any) {
             {/* Informações */}
             <View style={styles.infoSection}>
                 <Text style={styles.sectionTitle}>📦 Faça seu pedido</Text>
-                <Text style={styles.infoText}>Segunda à sexta até as 18h</Text>
-
-                <Text style={styles.sectionTitle}>⏰ Horário de Funcionamento</Text>
-                <Text style={styles.infoText}>Sábado e Domingo: 10h às 15h</Text>
+                {config?.businessDays?.split('\n').map((line, index) => (
+                    <Text key={index} style={styles.infoText}>
+                        {line} {config?.businessHours?.split('\n')[index] || ''}
+                    </Text>
+                ))}
 
                 <Text style={styles.sectionTitle}>📍 Localização</Text>
-                <Text style={styles.infoText}>Rua da Consolação, 900</Text>
-                <Text style={styles.infoText}>Emaús - Parnamirim/RN</Text>
+                <Text style={styles.infoText}>
+                    {config?.addressStreet && config?.addressNumber
+                        ? `${config.addressStreet}, ${config.addressNumber}`
+                        : 'Carregando...'}
+                </Text>
+                <Text style={styles.infoText}>
+                    {config?.addressNeighborhood && config?.addressCity && config?.addressState
+                        ? `${config.addressNeighborhood} - ${config.addressCity}/${config.addressState}`
+                        : 'Carregando...'}
+                </Text>
 
                 <Text style={styles.sectionTitle}>
                     <Fontisto name="whatsapp" size={18} color={COLORS.primary} /> Contato
                 </Text>
-                <Text style={styles.infoText}>(84) 98822-2025</Text>
+                <Text style={styles.infoText}>{config?.whatsappNumber ? formatPhone(config.whatsappNumber) : 'Carregando...'}</Text>
 
                 <Text style={styles.sectionTitle}>🚚 Delivery</Text>
                 <Text style={styles.infoText}>
