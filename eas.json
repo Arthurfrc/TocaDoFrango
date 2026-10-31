@@ -20,10 +20,7 @@
     "production": {
       "autoIncrement": true,
       "android": {
-        "buildType": "app-bundle",
-        "minifyEnabled": true,
-        "shrinkResources": true,
-        "proguardOutput": "proguard-rules.txt"
+        "buildType": "app-bundle"
       }
     }
   },
